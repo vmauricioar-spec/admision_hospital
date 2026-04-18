@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, sessio
 from Aplicacion.Servicios.HistoriaService import HistoriaService
 from Aplicacion.Servicios.AuthService import AuthService
 from datetime import datetime
+import re
 
 admission_bp = Blueprint('admission', __name__, url_prefix='/admission')
 historia_service = HistoriaService()
@@ -11,13 +12,13 @@ auth_service = AuthService()
 def _password_policy_error(password: str):
     if len(password) < 8:
         return "La contraseña debe tener mínimo 8 caracteres."
-    if not any(ch.isupper() for ch in password):
+    if not re.search(r"[A-Z]", password):
         return "La contraseña debe incluir al menos una mayúscula."
-    if not any(ch.islower() for ch in password):
+    if not re.search(r"[a-z]", password):
         return "La contraseña debe incluir al menos una minúscula."
-    if not any(ch.isdigit() for ch in password):
+    if not re.search(r"[0-9]", password):
         return "La contraseña debe incluir al menos un número."
-    if not any(not ch.isalnum() for ch in password):
+    if not re.search(r"[^A-Za-z0-9]", password):
         return "La contraseña debe incluir al menos un carácter especial."
     return None
 

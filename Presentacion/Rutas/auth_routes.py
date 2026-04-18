@@ -41,10 +41,10 @@ def _register_context(token, **kwargs):
 
 
 def _password_strength_label(password: str) -> str:
-    has_upper = any(ch.isupper() for ch in password)
-    has_lower = any(ch.islower() for ch in password)
-    has_digit = any(ch.isdigit() for ch in password)
-    has_special = any(not ch.isalnum() for ch in password)
+    has_upper = bool(re.search(r"[A-Z]", password))
+    has_lower = bool(re.search(r"[a-z]", password))
+    has_digit = bool(re.search(r"[0-9]", password))
+    has_special = bool(re.search(r"[^A-Za-z0-9]", password))
     score = sum([has_upper, has_lower, has_digit, has_special])
     if len(password) >= 12:
         score += 1
@@ -58,13 +58,13 @@ def _password_strength_label(password: str) -> str:
 def _password_policy_error(password: str) -> str | None:
     if len(password) < 8:
         return "La contraseña debe tener mínimo 8 caracteres."
-    if not any(ch.isupper() for ch in password):
+    if not re.search(r"[A-Z]", password):
         return "La contraseña debe incluir al menos una mayúscula."
-    if not any(ch.islower() for ch in password):
+    if not re.search(r"[a-z]", password):
         return "La contraseña debe incluir al menos una minúscula."
-    if not any(ch.isdigit() for ch in password):
+    if not re.search(r"[0-9]", password):
         return "La contraseña debe incluir al menos un número."
-    if not any(not ch.isalnum() for ch in password):
+    if not re.search(r"[^A-Za-z0-9]", password):
         return "La contraseña debe incluir al menos un carácter especial."
     return None
 
