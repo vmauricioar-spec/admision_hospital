@@ -141,9 +141,6 @@
         if (passwordInput.disabled) return;
         var isPassword = passwordInput.getAttribute("type") === "password";
         passwordInput.setAttribute("type", isPassword ? "text" : "password");
-        toggleBtn.innerHTML = isPassword
-          ? '<i class="bi bi-eye-slash"></i>'
-          : '<i class="bi bi-eye"></i>';
       });
     }
 

@@ -17,3 +17,38 @@
   background: #238636;
 }
 
+@media (max-width: 767.98px) {
+  .sidebar {
+    min-height: auto;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    padding: 0.65rem 0.75rem !important;
+  }
+
+  .sidebar h5 {
+    margin-bottom: 0.55rem !important;
+    font-size: 1rem;
+  }
+
+  .sidebar .nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+  }
+
+  .sidebar .nav-item {
+    flex: 0 0 auto;
+  }
+
+  .sidebar .nav-link {
+    white-space: nowrap;
+    border-radius: 999px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.9rem;
+  }
+}
+
