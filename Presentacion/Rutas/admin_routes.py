@@ -236,6 +236,8 @@ def eliminar_usuario(usuario_id: int):
     try:
         if not usuario_repo.get_by_id(usuario_id):
             flash('Usuario no encontrado.', 'danger')
+        elif historia_repo.count_by_usuario_registro(usuario_id) > 0:
+            flash('No se puede eliminar el usuario porque tiene historias registradas en admisión.', 'warning')
         else:
             usuario_repo.delete(usuario_id)
             flash('Usuario eliminado correctamente.', 'success')

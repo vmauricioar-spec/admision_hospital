@@ -157,6 +157,14 @@ class HistoriaRepository(IHistoriaRepository):
         cursor.close()
         return int(total)
 
+    def count_by_usuario_registro(self, usuario_id: int) -> int:
+        conn = self.db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(1) FROM Historias WHERE IdUsuarioRegistro = ?", usuario_id)
+        total = cursor.fetchone()[0]
+        cursor.close()
+        return int(total)
+
     def list_id_medico_turno_por_numero_fecha(
         self, numero_historia: str, fecha_dia: date
     ) -> List[Tuple[int, int, str]]:

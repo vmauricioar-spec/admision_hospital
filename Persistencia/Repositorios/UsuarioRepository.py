@@ -173,6 +173,8 @@ class UsuarioRepository(IUsuarioRepository):
     def delete(self, id: int) -> bool:
         conn = self.db.get_connection()
         cursor = conn.cursor()
+        cursor.execute("DELETE FROM TokensRecuperacionContrasena WHERE IdUsuario = ?", id)
+        cursor.execute("DELETE FROM MetricasContrasena WHERE IdUsuario = ?", id)
         cursor.execute("DELETE FROM Usuarios WHERE IdUsuario = ?", id)
         conn.commit()
         cursor.close()
