@@ -40,3 +40,9 @@ services:
         sync: false
       - key: GMAIL_APP_PASSWORD
         sync: false
+      - key: WEB_CONCURRENCY
+        value: "1"
+      - key: GUNICORN_THREADS
+        value: "2"
+      - key: GUNICORN_TIMEOUT
+        value: "120"
