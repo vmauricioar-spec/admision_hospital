@@ -1,13 +1,21 @@
+from datetime import timedelta
 from Persistencia.Conexion.DatabaseConnection import DatabaseConnection
 
 
 class PasswordMetricRepository:
+    _PERU_OFFSET = timedelta(hours=-5)
+
     def __init__(self):
         self.db = DatabaseConnection.get_instance()
         try:
             self._ensure_table()
         except Exception as exc:
             print(f"[WARN] No se pudo validar tabla MetricasContrasena al iniciar: {exc}")
+
+    def _to_peru_time(self, value):
+        if value is None:
+            return None
+        return value + self._PERU_OFFSET
 
     def _ensure_table(self):
         conn = self.db.get_connection()
@@ -90,7 +98,7 @@ class PasswordMetricRepository:
                     "password_length": int(row[4]),
                     "generation_time_ms": int(row[5]),
                     "strength_label": row[6],
-                    "created_at": row[7],
+                    "created_at": self._to_peru_time(row[7]),
                 }
             )
         return result
@@ -157,7 +165,7 @@ class PasswordMetricRepository:
                     "username": row[1],
                     "nombre_completo": row[2],
                     "passwords_generated": int(row[3] or 0),
-                    "last_metric_at": row[4],
+                    "last_metric_at": self._to_peru_time(row[4]),
                     "last_password_length": int(row[5] or 0),
                     "last_generation_ms": int(row[6] or 0),
                 }
