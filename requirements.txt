@@ -1,0 +1,6 @@
+flask
+python-dotenv
+pyodbc
+solana
+solders
+gunicorn

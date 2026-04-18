@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro de Historias - {{ fecha }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admission-layout.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admission-records.css') }}" />
+  </head>
+  <body data-fecha-objetivo="{{ fecha | replace('-', '/') }}">
+    <div class="container-fluid p-0">
+      <div class="row g-0">
+        <nav class="col-md-2 sidebar py-3">
+          <h5 class="text-white text-center mb-4">
+            <i class="bi bi-heart-pulse"></i> HC Admisión
+          </h5>
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admission.dashboard') }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link active"
+                href="{{ url_for('admission.fechas') }}"
+              >
+                <i class="bi bi-calendar-date"></i> Registro de Historias
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admission.cambiar_password') }}">
+                <i class="bi bi-shield-lock"></i> Seguridad
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <main class="col-md-10 d-flex flex-column p-0 app-shell-main">
+          {% include 'partials/app_topbar.html' %}
+          <div class="app-shell-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Fecha: {{ fecha }}</h2>
+            <a
+              href="{{ url_for('admission.fechas') }}"
+              class="btn btn-outline-secondary"
+            >
+              <i class="bi bi-arrow-left"></i> Volver
+            </a>
+          </div>
+          <div class="card border-0 shadow-sm record-board">
+            <div class="record-filters p-3 border-bottom">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <label for="filterEspecialidad" class="form-label mb-1">Especialidad</label>
+                  <select id="filterEspecialidad" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for esp in especialidades %}
+                    <option value="{{ esp.nombre }}">{{ esp.nombre }}</option>
+                    {% endfor %}
+                    <option value="Sin especialidad">Sin especialidad</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="filterTurno" class="form-label mb-1">Turno</label>
+                  <select id="filterTurno" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="M">M</option>
+                    <option value="T">T</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="filterEstado" class="form-label mb-1">Estado</label>
+                  <select id="filterEstado" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Recibido">Recibido</option>
+                  </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                  <button type="button" id="btnClearFilters" class="btn btn-sm btn-outline-secondary">
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive records-table-wrap" id="recordsTableWrap">
+              <table
+                class="table table-bordered mb-0 text-center"
+                id="recordsTable"
+              >
+                <thead class="bg-light">
+                  <tr>
+                    <th style="border-right: 2px solid #dee2e6">N° Historia</th>
+                    <th style="border-right: 2px solid #dee2e6">Médico</th>
+                    <th style="border-right: 2px solid #dee2e6">Especialidad</th>
+                    <th style="border-right: 2px solid #dee2e6">Turno</th>
+                    <th style="border-right: 2px solid #dee2e6">
+                      Resp. Triaje
+                    </th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyHistorias">
+                  {% for h in historias %}
+                  <tr class="record-row" data-historia-id="{{ h.id }}">
+                    <td style="border-right: 2px solid #dee2e6">
+                      <input
+                        type="text"
+                        class="form-control border-0 text-center numero-historia"
+                        value="{{ h.numero_historia }}"
+                      />
+                    </td>
+                    <td style="border-right: 2px solid #dee2e6">
+                      <select class="form-select border-0 medico-select">
+                        <option value="">Seleccionar...</option>
+                        {% for med in medicos %}
+                        <option
+                          value="{{ med.id }}"
+                          data-especialidad="{{ med.especialidad }}"
+                          {% if med.nombre == h.medico %}selected{% endif %}
+                        >
+                          {{ med.nombre }}
+                        </option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td class="especialidad-cell" style="border-right: 2px solid #dee2e6">
+                      {{ h.especialidad or 'Sin especialidad' }}
+                    </td>
+                    <td style="border-right: 2px solid #dee2e6">
+                      <select
+                        class="form-select border-0 text-center turno-select"
+                      >
+                        <option
+                          value="M"
+                          {% if h.turno == "M" %}selected{% endif %}
+                        >
+                          M
+                        </option>
+                        <option
+                          value="T"
+                          {% if h.turno == "T" %}selected{% endif %}
+                        >
+                          T
+                        </option>
+                      </select>
+                    </td>
+                    <td style="border-right: 2px solid #dee2e6">
+                      <input
+                        type="text"
+                        class="form-control border-0 text-center responsable-input"
+                        value="{{ h.responsable_triaje }}"
+                        placeholder="Nombre responsable"
+                      />
+                    </td>
+                    <td>
+                      <span class="status-badge {% if h.estado == 'Recibido' %}btn-status-recibido{% else %}btn-status-pendiente{% endif %} js-toggle-status">{{ h.estado }}</span>
+                    </td>
+                    <td>
+                      <button type="button" class="btn btn-sm btn-outline-danger js-delete-historia" title="Eliminar historia">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              <button id="btnSideAddRow" type="button" class="btn btn-primary btn-side-add-row" title="Agregar nueva fila">
+                <i class="bi bi-plus-lg"></i>
+              </button>
+            </div>
+          </div>
+          <button id="btnSaveRecords" class="btn btn-success btn-save-fixed">
+            <i class="bi bi-check-lg"></i> Guardar
+          </button>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div id="medicos-options-template" class="d-none">{% for med in medicos %}<option value="{{ med.id }}" data-especialidad="{{ med.especialidad }}">{{ med.nombre }}</option>{% endfor %}</div>
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admission-historias-fecha.js') }}"></script>
+  </body>
+</html>

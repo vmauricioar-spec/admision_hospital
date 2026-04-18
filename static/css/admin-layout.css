@@ -1,0 +1,19 @@
+.sidebar {
+  min-height: 100vh;
+  background: #0d1117;
+}
+
+.nav-link {
+  color: #8b949e;
+}
+
+.nav-link:hover {
+  color: #fff;
+  background: #21262d;
+}
+
+.nav-link.active {
+  color: #fff;
+  background: #238636;
+}
+

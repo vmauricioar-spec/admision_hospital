@@ -1,0 +1,101 @@
+body {
+  background-color: #f8f9fa;
+}
+
+/* Barra superior: usuario + cerrar sesión (admisión y admin) */
+.app-shell-main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding: 0.7rem 1.35rem;
+  background: linear-gradient(105deg, #ffffff 0%, #f8fafc 45%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  position: relative;
+  z-index: 5;
+}
+
+.app-topbar::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: linear-gradient(90deg, #238636 0%, #2ea043 35%, #1f6feb 100%);
+  opacity: 0.85;
+}
+
+.app-topbar-start {
+  min-width: 0;
+  flex: 1;
+}
+
+.app-topbar-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.app-topbar-user i {
+  font-size: 1.15rem;
+  color: #475569;
+}
+
+.app-topbar-user-name {
+  max-width: 14rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.btn-app-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.15rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  color: #7f1d1d;
+  background: linear-gradient(180deg, #fff1f2 0%, #fecdd3 100%);
+  border: 1px solid #f43f5e;
+  box-shadow: 0 2px 10px rgba(244, 63, 94, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+}
+
+.btn-app-logout:hover {
+  color: #450a0a;
+  filter: brightness(1.02);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(244, 63, 94, 0.28);
+}
+
+.btn-app-logout:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.35);
+}
+
+.app-shell-body {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+

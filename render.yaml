@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: historias-admision
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    autoDeploy: true
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: DB_SERVER
+        sync: false
+      - key: DB_NAME
+        value: "free-sql-db-0676007"
+      - key: DB_DRIVER
+        value: "ODBC Driver 18 for SQL Server"
+      - key: DB_TRUSTED
+        value: "false"
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_ENCRYPT
+        value: "yes"
+      - key: DB_TRUST_SERVER_CERTIFICATE
+        value: "no"
+      - key: DB_CONNECTION_TIMEOUT
+        value: "30"
+      - key: ALCHEMY_SOLANA_RPC_URL
+        sync: false
+      - key: SOLANA_SIGNER_PRIVATE_KEY
+        sync: false
+      - key: GMAIL_SMTP_HOST
+        value: "smtp.gmail.com"
+      - key: GMAIL_SMTP_PORT
+        value: "465"
+      - key: GMAIL_USER
+        sync: false
+      - key: GMAIL_APP_PASSWORD
+        sync: false

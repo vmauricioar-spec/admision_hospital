@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registro de Historias</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admission-layout.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admission-fechas.css') }}" />
+  </head>
+  <body>
+    <script id="registros-data" type="application/json">{{ registros | tojson }}</script>
+
+    <div class="container-fluid p-0">
+      <div class="row g-0">
+        <nav class="col-md-2 sidebar py-3">
+          <h5 class="text-white text-center mb-4">
+            <i class="bi bi-heart-pulse"></i> HC Admisión
+          </h5>
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admission.dashboard') }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link active"
+                href="{{ url_for('admission.fechas') }}"
+              >
+                <i class="bi bi-calendar-date"></i> Registro de Historias
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admission.cambiar_password') }}">
+                <i class="bi bi-shield-lock"></i> Seguridad
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <main class="col-md-10 p-0 d-flex flex-column app-shell-main">
+          {% include 'partials/app_topbar.html' %}
+          <div class="fechas-main">
+          <div class="fechas-page-inner">
+            <header class="fechas-page-header">
+              <div>
+                <h1 class="fechas-page-title">Registro de historias</h1>
+                <p class="fechas-page-lead">
+                  Carpetas por día. Creá el registro de hoy o abrí una fecha para cargar y revisar historias.
+                </p>
+              </div>
+            </header>
+
+            <section class="fechas-controls-card">
+              <div class="fechas-controls-grid">
+                <div class="fechas-controls-primary">
+                  <button id="btnRegistrarHoy" type="button" class="btn btn-primary btn-create-register w-100 w-md-auto">
+                    <i class="bi bi-plus-circle me-2"></i>Crear nuevo registro
+                  </button>
+                  <p class="fechas-controls-hint text-muted mb-0">
+                    Si la carpeta de hoy ya existe, abrila desde el listado inferior.
+                  </p>
+                </div>
+                <div class="fechas-controls-filters">
+                  <label for="searchDateInput" class="form-label fechas-label mb-1">Ir por fecha</label>
+                  <div class="fechas-date-row">
+                    <input type="date" id="searchDateInput" class="form-control date-pick-input flex-grow-1" />
+                    <button type="button" id="btnClearDateFilter" class="btn btn-outline-secondary btn-clear-date" title="Quitar filtro de fecha">
+                      <i class="bi bi-x-lg"></i>
+                    </button>
+                  </div>
+                  <div class="quick-filters mt-3" role="group" aria-label="Filtro rápido por periodo">
+                    <span class="quick-filters-label text-muted">Periodo</span>
+                    <button type="button" class="btn btn-sm btn-outline-primary quick-filter-btn" data-filter="today">Hoy</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary quick-filter-btn" data-filter="last7">Últimos 7 días</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary quick-filter-btn active" data-filter="all">Todas</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="records-summary-wrap">
+              <div id="recordsSummary" class="records-summary-bar" role="status"></div>
+            </div>
+
+            <section class="list-panel">
+              <h2 class="fechas-section-title">Carpetas</h2>
+              <div id="recordsContainer" class="records-grid">
+                <!-- Se carga vía JavaScript -->
+              </div>
+              <div id="noRecordsMessage" class="empty-state d-none">
+                <i class="bi bi-inbox empty-state-icon"></i>
+                <p class="mb-0 fw-semibold">No hay carpetas para este filtro</p>
+                <p class="small text-muted mb-0 mt-1">Probá otra fecha o elegí «Todas» en periodo.</p>
+              </div>
+            </section>
+          </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="modal fade register-modal" id="registroHistoriasModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-journal-plus me-2"></i><span id="registroModalTitle">Nuevo registro de historias</span></h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <div class="modal-record-filters record-filters p-3 border rounded mb-3">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <label for="modalFilterEspecialidad" class="form-label mb-1">Especialidad</label>
+                  <select id="modalFilterEspecialidad" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for esp in especialidades %}
+                    <option value="{{ esp.nombre }}">{{ esp.nombre }}</option>
+                    {% endfor %}
+                    <option value="Sin especialidad">Sin especialidad</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="modalFilterTurno" class="form-label mb-1">Turno</label>
+                  <select id="modalFilterTurno" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="M">M</option>
+                    <option value="T">T</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="modalFilterEstado" class="form-label mb-1">Estado</label>
+                  <select id="modalFilterEstado" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Recibido">Recibido</option>
+                  </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                  <button type="button" id="btnModalClearFilters" class="btn btn-sm btn-outline-secondary">
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered mb-0 text-center" id="modalRecordsTable">
+                <thead class="bg-light">
+                  <tr>
+                    <th style="border-right: 2px solid #dee2e6;">N° Historia</th>
+                    <th style="border-right: 2px solid #dee2e6;">Médico</th>
+                    <th style="border-right: 2px solid #dee2e6;">Especialidad</th>
+                    <th style="border-right: 2px solid #dee2e6;">Turno</th>
+                    <th style="border-right: 2px solid #dee2e6;">Resp. Triaje</th>
+                    <th style="border-right: 2px solid #dee2e6;">Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="modalTbodyHistorias">
+                  <tr class="modal-record-row">
+                    <td style="border-right: 2px solid #dee2e6;"><input type="text" class="form-control border-0 text-center numero-historia"></td>
+                    <td style="border-right: 2px solid #dee2e6;">
+                      <select class="form-select border-0 medico-select">
+                        <option value="">Seleccionar...</option>
+                        {% for med in medicos %}
+                        <option value="{{ med.id }}" data-especialidad="{{ med.especialidad }}">{{ med.nombre }}</option>
+                        {% endfor %}
+                      </select>
+                    </td>
+                    <td class="especialidad-cell" style="border-right: 2px solid #dee2e6;">Sin especialidad</td>
+                    <td style="border-right: 2px solid #dee2e6;">
+                      <select class="form-select border-0 text-center turno-select">
+                        <option value="M">M</option>
+                        <option value="T">T</option>
+                      </select>
+                    </td>
+                    <td style="border-right: 2px solid #dee2e6;">
+                      <input type="text" class="form-control border-0 text-center responsable-input" placeholder="Nombre responsable">
+                    </td>
+                    <td style="border-right: 2px solid #dee2e6;"><span class="status-badge btn-status-pendiente js-toggle-status">Pendiente</span></td>
+                    <td>
+                      <button type="button" class="btn btn-sm btn-outline-danger js-modal-delete-row" title="Eliminar fila">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer d-flex justify-content-between">
+            <button type="button" id="btnModalAddRow" class="btn btn-outline-primary">
+              <i class="bi bi-plus-circle me-1"></i>Agregar fila
+            </button>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" id="btnModalSaveRecords" class="btn btn-success">
+                <i class="bi bi-check-lg me-1"></i>Guardar historias
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="confirmDeleteHistoriaModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning me-2"></i>Confirmar eliminación</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="mb-0">¿Seguro que deseas eliminar esta fila?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" id="btnConfirmDeleteHistoria" class="btn btn-danger">
+              <i class="bi bi-trash me-1"></i>Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="medicos-options-template" class="d-none">{% for med in medicos %}<option value="{{ med.id }}" data-especialidad="{{ med.especialidad }}">{{ med.nombre }}</option>{% endfor %}</div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admission-fechas.js') }}"></script>
+  </body>
+</html>

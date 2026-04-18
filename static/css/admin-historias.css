@@ -1,0 +1,33 @@
+/* Vista admin: carpetas + modal solo lectura (reutiliza admission-fechas.css) */
+
+.admin-historias-lead {
+  max-width: 44rem;
+}
+
+.admin-readonly-modal .modal-body .table td,
+.admin-readonly-modal .modal-body .table th {
+  vertical-align: middle;
+  font-size: 0.9rem;
+}
+
+.admin-readonly-modal .badge-estado {
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+}
+
+.admin-readonly-modal .badge-estado--rec {
+  background: #d1e7dd;
+  color: #0f5132;
+  border: 1px solid #0f5132;
+}
+
+.admin-readonly-modal .badge-estado--pend {
+  background: #e3f2fd;
+  color: #0d6efd;
+  border: 1px solid #0d6efd;
+}
+
+.fechas-controls-filters-only {
+  width: 100%;
+}

@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Historias clínicas - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-layout.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admission-fechas.css') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-historias.css') }}" />
+  </head>
+  <body>
+    <script id="admin-registros-data" type="application/json">{{ registros | tojson }}</script>
+
+    <div class="container-fluid p-0">
+      <div class="row g-0">
+        <nav class="col-md-2 sidebar py-3">
+          <h5 class="text-white text-center mb-4">
+            <i class="bi bi-heart-pulse"></i> HC Admin
+          </h5>
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="{{ url_for('admin.historias') }}">
+                <i class="bi bi-file-earmark-medical"></i> Historias
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admin.especialidades') }}">
+                <i class="bi bi-bag-plus"></i> Especialidades
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admin.medicos') }}">
+                <i class="bi bi-person-badge"></i> Médicos
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admin.usuarios') }}">
+                <i class="bi bi-people"></i> Usuarios
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('admin.password_metrics') }}">
+                <i class="bi bi-shield-lock"></i> Métricas Password
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <main class="col-md-10 p-0 d-flex flex-column app-shell-main">
+          {% include 'partials/app_topbar.html' %}
+          <div class="fechas-main">
+          <div class="fechas-page-inner">
+            <header class="fechas-page-header">
+              <div>
+                <h1 class="fechas-page-title">Historias clínicas</h1>
+                <p class="fechas-page-lead admin-historias-lead text-muted">
+                  Vista de solo lectura agrupada por día. Podés filtrar carpetas y, al abrir una, filtrar el
+                  contenido. Desde administración no se crean, editan ni eliminan historias.
+                </p>
+              </div>
+            </header>
+
+            <section class="fechas-controls-card">
+              <div class="fechas-controls-filters-only">
+                <label for="adminSearchDateInput" class="form-label fechas-label mb-1">Ir por fecha</label>
+                <div class="fechas-date-row">
+                  <input type="date" id="adminSearchDateInput" class="form-control date-pick-input flex-grow-1" />
+                  <button type="button" id="adminBtnClearDateFilter" class="btn btn-outline-secondary btn-clear-date" title="Quitar filtro de fecha">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
+                <div class="quick-filters mt-3" role="group" aria-label="Filtro rápido por periodo">
+                  <span class="quick-filters-label text-muted">Periodo</span>
+                  <button type="button" class="btn btn-sm btn-outline-primary quick-filter-btn" data-filter="today">Hoy</button>
+                  <button type="button" class="btn btn-sm btn-outline-primary quick-filter-btn" data-filter="last7">Últimos 7 días</button>
+                  <button type="button" class="btn btn-sm btn-outline-secondary quick-filter-btn active" data-filter="all">Todas</button>
+                </div>
+              </div>
+            </section>
+
+            <div class="records-summary-wrap">
+              <div id="adminRecordsSummary" class="records-summary-bar" role="status"></div>
+            </div>
+
+            <section class="list-panel">
+              <h2 class="fechas-section-title">Carpetas por día</h2>
+              <div id="adminRecordsContainer" class="records-grid"></div>
+              <div id="adminNoRecordsMessage" class="empty-state d-none">
+                <i class="bi bi-inbox empty-state-icon"></i>
+                <p class="mb-0 fw-semibold">No hay carpetas para este filtro</p>
+                <p class="small text-muted mb-0 mt-1">Probá otra fecha o elegí «Todas» en periodo.</p>
+              </div>
+            </section>
+          </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <div class="modal fade register-modal admin-readonly-modal" id="adminHistoriasModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="bi bi-journal-text me-2"></i><span id="adminModalTitle">Historias del día</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+          </div>
+          <div class="modal-body">
+            <p class="modal-subtitle mb-3">Solo consulta. Los cambios se realizan desde admisión.</p>
+            <div class="modal-record-filters record-filters p-3 border rounded mb-3">
+              <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                  <label for="adminModalFilterEspecialidad" class="form-label mb-1">Especialidad</label>
+                  <select id="adminModalFilterEspecialidad" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    {% for esp in especialidades %}
+                    <option value="{{ esp.nombre }}">{{ esp.nombre }}</option>
+                    {% endfor %}
+                    <option value="Sin especialidad">Sin especialidad</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="adminModalFilterTurno" class="form-label mb-1">Turno</label>
+                  <select id="adminModalFilterTurno" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="M">M</option>
+                    <option value="T">T</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label for="adminModalFilterEstado" class="form-label mb-1">Estado</label>
+                  <select id="adminModalFilterEstado" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="Recibido">Recibido</option>
+                  </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                  <button type="button" id="adminBtnModalClearFilters" class="btn btn-sm btn-outline-secondary">Limpiar</button>
+                </div>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered mb-0 text-center" id="adminModalTable">
+                <thead class="bg-light">
+                  <tr>
+                    <th>N° Historia</th>
+                    <th>Médico</th>
+                    <th>Especialidad</th>
+                    <th>Turno</th>
+                    <th>Resp. Triaje</th>
+                    <th>Estado</th>
+                    <th>Fecha y hora de registro</th>
+                  </tr>
+                </thead>
+                <tbody id="adminModalTbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Cerrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin-historias.js') }}"></script>
+  </body>
+</html>

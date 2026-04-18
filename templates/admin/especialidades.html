@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Especialidades</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-management.css') }}">
+</head>
+<body>
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+            <nav class="col-md-2 sidebar py-3">
+                <h5 class="text-white text-center mb-4">
+                    <i class="bi bi-heart-pulse"></i> HC Admin
+                </h5>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.historias') }}">
+                            <i class="bi bi-file-earmark-medical"></i> Historias
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin.especialidades') }}">
+                            <i class="bi bi-bag-plus"></i> Especialidades
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.medicos') }}">
+                            <i class="bi bi-person-badge"></i> Médicos
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.usuarios') }}">
+                            <i class="bi bi-people"></i> Usuarios
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin.password_metrics') }}">
+                            <i class="bi bi-shield-lock"></i> Métricas Password
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            <main class="col-md-10 d-flex flex-column p-0 app-shell-main">
+                {% include 'partials/app_topbar.html' %}
+                <div class="app-shell-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2>Especialidades</h2>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
+                        <i class="bi bi-plus-lg"></i> Nueva Especialidad
+                    </button>
+                </div>
+                <div class="card content-card">
+                    <div class="card-body">
+                        <p class="text-muted">Gestión de especialidades médicas - Los usuarios de admisión podrán seleccionar de esta lista.</p>
+                        <div class="mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="especialidadesSearch" class="form-control" placeholder="Buscar por nombre o descripción..." data-search-input>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-striped align-middle" id="especialidadesTable" data-search-table>
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Descripción</th>
+                                        <th class="text-end">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for esp in especialidades %}
+                                    <tr>
+                                        <td>{{ esp.nombre }}</td>
+                                        <td>{{ esp.descripcion or '-' }}</td>
+                                        <td class="text-end actions">
+                                            <button class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#editEspecialidadModal{{ esp.id }}">
+                                                <i class="bi bi-pencil-square"></i> Editar
+                                            </button>
+                                            <form method="POST" action="{{ url_for('admin.eliminar_especialidad', especialidad_id=esp.id) }}" class="d-inline" data-confirm="¿Eliminar la especialidad '{{ esp.nombre }}'?">
+                                                <button type="button" class="btn btn-sm btn-outline-danger js-delete-btn">
+                                                    <i class="bi bi-trash3"></i> Eliminar
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-4">No hay especialidades registradas.</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" method="POST" action="{{ url_for('admin.especialidades') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Nueva Especialidad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" name="nombre" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% for esp in especialidades %}
+    <div class="modal fade" id="editEspecialidadModal{{ esp.id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <form class="modal-content" method="POST" action="{{ url_for('admin.editar_especialidad', especialidad_id=esp.id) }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Especialidad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nombre</label>
+                        <input type="text" class="form-control" name="nombre" value="{{ esp.nombre }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" name="descripcion" rows="3">{{ esp.descripcion }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                {% for category, message in messages %}
+                    <div class="toast hc-toast {{ category }} mb-2" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+                        <div class="toast-header">
+                            <strong class="me-auto">
+                                {% if category == 'success' %}
+                                    <i class="bi bi-check-circle-fill text-success"></i> Operación exitosa
+                                {% elif category == 'warning' %}
+                                    <i class="bi bi-exclamation-triangle-fill text-warning"></i> Atención
+                                {% else %}
+                                    <i class="bi bi-x-circle-fill text-danger"></i> Error
+                                {% endif %}
+                            </strong>
+                            <small>3 segundos</small>
+                        </div>
+                        <div class="toast-body">{{ message }}</div>
+                        <div class="toast-progress"></div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="modal fade" id="confirmActionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle text-warning"></i> Confirmar acción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0" id="confirmActionMessage">¿Deseas continuar con esta operación?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmActionBtn">Sí, continuar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/admin-management.js') }}"></script>
+</body>
+</html>

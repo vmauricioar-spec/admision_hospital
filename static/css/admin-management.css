@@ -1,0 +1,85 @@
+.content-card {
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(13, 17, 23, 0.08);
+}
+
+.table thead th {
+  border-bottom: 0;
+  font-weight: 600;
+  color: #334155;
+  background: #f1f5f9;
+}
+
+.table tbody tr {
+  vertical-align: middle;
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.toast-container {
+  z-index: 1080;
+}
+
+.hc-toast {
+  min-width: 330px;
+  border: 0;
+  border-left: 5px solid #198754;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.hc-toast.warning {
+  border-left-color: #f59e0b;
+}
+
+.hc-toast.danger {
+  border-left-color: #dc3545;
+}
+
+.hc-toast .toast-progress {
+  height: 4px;
+  transform-origin: left center;
+  animation: toastCountdown 3s linear forwards;
+}
+
+.hc-toast.success .toast-progress {
+  background: #198754;
+}
+
+.hc-toast.warning .toast-progress {
+  background: #f59e0b;
+}
+
+.hc-toast.danger .toast-progress {
+  background: #dc3545;
+}
+
+.hc-toast:not(.show) {
+  opacity: 0;
+  transform: translateX(18px) scale(0.98);
+}
+
+.hc-toast.show {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+  transition: all 0.35s ease;
+}
+
+.modal-content {
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.18);
+}
+
+@keyframes toastCountdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
