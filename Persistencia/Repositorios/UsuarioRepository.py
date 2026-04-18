@@ -6,7 +6,10 @@ from typing import List, Optional
 class UsuarioRepository(IUsuarioRepository):
     def __init__(self):
         self.db = DatabaseConnection.get_instance()
-        self._ensure_email_column()
+        try:
+            self._ensure_email_column()
+        except Exception as exc:
+            print(f"[WARN] No se pudo validar columna CorreoElectronico al iniciar: {exc}")
 
     def _ensure_email_column(self):
         conn = self.db.get_connection()

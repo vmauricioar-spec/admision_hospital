@@ -6,7 +6,10 @@ from Persistencia.Conexion.DatabaseConnection import DatabaseConnection
 class PasswordResetTokenRepository:
     def __init__(self):
         self.db = DatabaseConnection.get_instance()
-        self._ensure_table()
+        try:
+            self._ensure_table()
+        except Exception as exc:
+            print(f"[WARN] No se pudo validar tabla TokensRecuperacionContrasena al iniciar: {exc}")
 
     def _ensure_table(self):
         conn = self.db.get_connection()
