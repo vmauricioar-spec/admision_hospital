@@ -21,6 +21,10 @@ dist/
 .mypy_cache/
 .ruff_cache/
 
+# Local databases/runtime files
+instance/
+*.db
+
 # IDE/OS files
 .vscode/
 .idea/
