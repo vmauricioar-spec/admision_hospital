@@ -47,6 +47,50 @@
     ruleEl.classList.toggle("rule-ok", !!ok);
   }
 
+  function secureRandomIndex(max) {
+    if (max <= 0) return 0;
+    if (window.crypto && window.crypto.getRandomValues) {
+      var arr = new Uint32Array(1);
+      window.crypto.getRandomValues(arr);
+      return arr[0] % max;
+    }
+    return Math.floor(Math.random() * max);
+  }
+
+  function pickRandom(chars) {
+    return chars.charAt(secureRandomIndex(chars.length));
+  }
+
+  function shuffleArray(items) {
+    var arr = items.slice();
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = secureRandomIndex(i + 1);
+      var temp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = temp;
+    }
+    return arr;
+  }
+
+  function generateStrongSuggestion(length) {
+    var upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    var lower = "abcdefghijkmnopqrstuvwxyz";
+    var digits = "23456789";
+    var special = "!@#$%&*+-_=?";
+    var all = upper + lower + digits + special;
+
+    var chars = [
+      pickRandom(upper),
+      pickRandom(lower),
+      pickRandom(digits),
+      pickRandom(special),
+    ];
+    for (var i = chars.length; i < length; i++) {
+      chars.push(pickRandom(all));
+    }
+    return shuffleArray(chars).join("");
+  }
+
   function setupRegisterToken() {
     var form = document.querySelector("form[method='POST']");
     var nombreInput = document.querySelector("input[name='nombre_completo']");
@@ -60,6 +104,8 @@
     var text = document.getElementById("passwordStrengthText");
     var passwordLockHint = document.getElementById("passwordLockHint");
     var generationField = document.getElementById("generationTimeMs");
+    var suggestionsList = document.getElementById("passwordSuggestions");
+    var refreshSuggestionsBtn = document.getElementById("btnRefreshSuggestions");
     var startAtMs = 0;
 
     var ruleLength = document.getElementById("ruleLength");
@@ -67,6 +113,43 @@
     var ruleLower = document.getElementById("ruleLower");
     var ruleNumber = document.getElementById("ruleNumber");
     var ruleSpecial = document.getElementById("ruleSpecial");
+    var suggestionButtons = [];
+
+    function applySuggestion(password) {
+      if (!passwordInput || passwordInput.disabled) return;
+      passwordInput.value = password;
+      if (!startAtMs) startAtMs = Date.now();
+      refreshMeter();
+      passwordInput.focus();
+    }
+
+    function renderSuggestions() {
+      if (!suggestionsList) return;
+      var generated = {};
+      var suggestions = [];
+      while (suggestions.length < 3) {
+        var candidate = generateStrongSuggestion(14);
+        if (!generated[candidate]) {
+          generated[candidate] = true;
+          suggestions.push(candidate);
+        }
+      }
+
+      suggestionButtons = [];
+      suggestionsList.innerHTML = "";
+      suggestions.forEach(function (pwd, idx) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "password-suggestion-item";
+        btn.setAttribute("aria-label", "Usar sugerencia de contraseña " + (idx + 1));
+        btn.textContent = pwd;
+        btn.addEventListener("click", function () {
+          applySuggestion(pwd);
+        });
+        suggestionsList.appendChild(btn);
+        suggestionButtons.push(btn);
+      });
+    }
 
     function validateNotificationTarget() {
       if (!notificationTarget) return;
@@ -108,6 +191,12 @@
       if (toggleBtn) {
         toggleBtn.disabled = !ready;
       }
+      if (refreshSuggestionsBtn) {
+        refreshSuggestionsBtn.disabled = !ready;
+      }
+      suggestionButtons.forEach(function (btn) {
+        btn.disabled = !ready;
+      });
       refreshMeter();
     }
 
@@ -141,6 +230,14 @@
         if (passwordInput.disabled) return;
         var isPassword = passwordInput.getAttribute("type") === "password";
         passwordInput.setAttribute("type", isPassword ? "text" : "password");
+      });
+    }
+
+    if (refreshSuggestionsBtn) {
+      refreshSuggestionsBtn.addEventListener("click", function () {
+        if (passwordInput.disabled) return;
+        renderSuggestions();
+        refreshPasswordLockState();
       });
     }
 
@@ -180,6 +277,7 @@
       });
     }
 
+    renderSuggestions();
     validateNotificationTarget();
     refreshPasswordLockState();
   }

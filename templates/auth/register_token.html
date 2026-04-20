@@ -68,6 +68,18 @@
                                     <li id="ruleNumber">Al menos un número</li>
                                     <li id="ruleSpecial">Al menos un carácter especial</li>
                                 </ul>
+                                <div class="password-suggestions mt-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <small class="text-muted">Sugerencias seguras (clic para usar)</small>
+                                        <button type="button" class="btn btn-link btn-sm p-0" id="btnRefreshSuggestions">
+                                            <i class="bi bi-arrow-repeat"></i> Regenerar
+                                        </button>
+                                    </div>
+                                    <div id="passwordSuggestions" class="d-grid gap-2"></div>
+                                    <small class="form-text text-muted">
+                                        Recomendación: evita nombres, fechas o datos personales en tu contraseña.
+                                    </small>
+                                </div>
                             </div>
                             <input type="hidden" id="generationTimeMs" name="generation_time_ms" value="0" />
                             <button type="submit" class="btn btn-primary w-100 py-2">Registrarse</button>
