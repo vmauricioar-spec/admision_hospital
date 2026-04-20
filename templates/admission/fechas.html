@@ -227,6 +227,7 @@
 
     <div id="medicos-options-template" class="d-none">{% for med in medicos %}<option value="{{ med.id }}" data-especialidad="{{ med.especialidad }}">{{ med.nombre }}</option>{% endfor %}</div>
 
+    <script src="{{ url_for('static', filename='js/mobile-sidebar.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/admission-fechas.js') }}"></script>
   </body>

@@ -17,6 +17,10 @@
   background: #238636;
 }
 
+.sidebar .sidebar-mobile-toggle {
+  display: none;
+}
+
 .dashboard-progress {
   height: 26px;
   border-radius: 999px;
@@ -81,28 +85,48 @@
   }
 
   .sidebar h5 {
-    margin-bottom: 0.55rem !important;
+    margin-bottom: 0 !important;
     font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+  }
+
+  .sidebar .sidebar-mobile-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 1px solid #3a444f;
+    background: #161b22;
+    color: #f8fafc;
+    border-radius: 10px;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.82rem;
+    line-height: 1;
+  }
+
+  .sidebar .sidebar-mobile-toggle i {
+    font-size: 0.95rem;
   }
 
   .sidebar .nav {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-    overflow-x: auto;
+    display: none;
+    flex-direction: column;
+    gap: 0.35rem;
+    margin-top: 0.55rem;
     padding-bottom: 0.25rem;
   }
 
-  .sidebar .nav-item {
-    flex: 0 0 auto;
+  .sidebar.is-open .nav {
+    display: flex;
   }
 
   .sidebar .nav-link {
-    white-space: nowrap;
-    border-radius: 999px;
-    padding: 0.45rem 0.75rem;
-    font-size: 0.9rem;
+    white-space: normal;
+    border-radius: 10px;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.88rem;
   }
 }
 
