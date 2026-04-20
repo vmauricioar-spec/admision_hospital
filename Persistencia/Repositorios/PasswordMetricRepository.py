@@ -151,8 +151,10 @@ class PasswordMetricRepository:
                 ), 0) AS LastGenerationMs
             FROM Usuarios u
             LEFT JOIN MetricasContrasena pm ON pm.IdUsuario = u.IdUsuario
-            GROUP BY u.IdUsuario, u.NombreUsuario, u.NombreCompleto
-            ORDER BY PasswordsGenerated DESC, u.NombreUsuario ASC
+            GROUP BY u.IdUsuario, u.NombreUsuario, u.NombreCompleto, u.FechaCreacion
+            ORDER BY
+                COALESCE(MAX(pm.FechaCreacion), u.FechaCreacion) DESC,
+                u.IdUsuario DESC
             """
         )
         rows = cursor.fetchall()

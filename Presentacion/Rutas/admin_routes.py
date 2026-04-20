@@ -55,18 +55,19 @@ def _password_policy_error(password: str):
 
 
 def _password_strength_label(password: str) -> str:
+    has_length = len(password) >= 8
     has_upper = bool(re.search(r"[A-Z]", password))
     has_lower = bool(re.search(r"[a-z]", password))
     has_digit = bool(re.search(r"[0-9]", password))
     has_special = bool(re.search(r"[^A-Za-z0-9]", password))
-    score = sum([has_upper, has_lower, has_digit, has_special])
+    score = sum([has_length, has_upper, has_lower, has_digit, has_special])
     if len(password) >= 12:
         score += 1
-    if score <= 2:
-        return "Fragil"
-    if score <= 4:
+    if score >= 5:
+        return "Fuerte"
+    if score >= 3:
         return "Regular"
-    return "Fuerte"
+    return "Fragil"
 
 @admin_bp.before_request
 def check_admin():
