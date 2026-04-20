@@ -262,10 +262,17 @@ def historias():
 
 @admin_bp.route('/password-metrics')
 def password_metrics():
-    summary = password_metric_repo.get_summary()
-    per_user = password_metric_repo.get_per_user()
-    per_user.sort(key=lambda item: int(item.get("usuario_id") or 0), reverse=True)
-    metrics = password_metric_repo.get_all()
+    try:
+        summary = password_metric_repo.get_summary()
+        per_user = password_metric_repo.get_per_user()
+        per_user.sort(key=lambda item: int(item.get("usuario_id") or 0), reverse=True)
+        metrics = password_metric_repo.get_all()
+    except Exception as exc:
+        print(f"[ERROR] No se pudieron cargar métricas de contraseña: {exc}")
+        flash('No se pudieron cargar las métricas de contraseña en este momento.', 'warning')
+        summary = {"total_passwords": 0, "avg_length": 0.0, "avg_generation_ms": 0.0}
+        per_user = []
+        metrics = []
     return render_template(
         'admin/password_metrics.html',
         summary=summary,
