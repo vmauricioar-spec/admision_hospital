@@ -267,17 +267,31 @@ def password_metrics():
         per_user = password_metric_repo.get_per_user()
         per_user.sort(key=lambda item: int(item.get("usuario_id") or 0), reverse=True)
         metrics = password_metric_repo.get_all()
+        analytics_data = []
+        for metric in metrics:
+            created_at = metric.get("created_at")
+            analytics_data.append(
+                {
+                    "created_at": created_at.isoformat() if created_at else None,
+                    "username": metric.get("username"),
+                    "password_length": int(metric.get("password_length") or 0),
+                    "generation_time_ms": int(metric.get("generation_time_ms") or 0),
+                    "strength_label": metric.get("strength_label") or "Fragil",
+                }
+            )
     except Exception as exc:
         print(f"[ERROR] No se pudieron cargar métricas de contraseña: {exc}")
         flash('No se pudieron cargar las métricas de contraseña en este momento.', 'warning')
         summary = {"total_passwords": 0, "avg_length": 0.0, "avg_generation_ms": 0.0}
         per_user = []
         metrics = []
+        analytics_data = []
     return render_template(
         'admin/password_metrics.html',
         summary=summary,
         per_user=per_user,
         metrics=metrics,
+        analytics_data=analytics_data,
     )
 
 
