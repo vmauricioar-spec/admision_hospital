@@ -55,6 +55,9 @@ def _password_policy_error(password: str):
 
 
 def _password_strength_label(password: str) -> str:
+    if _password_policy_error(password) is None:
+        return "Fuerte"
+
     has_length = len(password) >= 8
     has_upper = bool(re.search(r"[A-Z]", password))
     has_lower = bool(re.search(r"[a-z]", password))
@@ -261,6 +264,7 @@ def historias():
 def password_metrics():
     summary = password_metric_repo.get_summary()
     per_user = password_metric_repo.get_per_user()
+    per_user.sort(key=lambda item: int(item.get("usuario_id") or 0), reverse=True)
     metrics = password_metric_repo.get_all()
     return render_template(
         'admin/password_metrics.html',

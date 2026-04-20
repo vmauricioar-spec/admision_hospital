@@ -41,6 +41,9 @@ def _register_context(token, **kwargs):
 
 
 def _password_strength_label(password: str) -> str:
+    if _password_policy_error(password) is None:
+        return "Fuerte"
+
     has_length = len(password) >= 8
     has_upper = bool(re.search(r"[A-Z]", password))
     has_lower = bool(re.search(r"[a-z]", password))

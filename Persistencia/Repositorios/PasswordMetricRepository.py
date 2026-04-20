@@ -153,7 +153,7 @@ class PasswordMetricRepository:
             LEFT JOIN MetricasContrasena pm ON pm.IdUsuario = u.IdUsuario
             GROUP BY u.IdUsuario, u.NombreUsuario, u.NombreCompleto, u.FechaCreacion
             ORDER BY
-                COALESCE(MAX(pm.FechaCreacion), u.FechaCreacion) DESC,
+                u.FechaCreacion DESC,
                 u.IdUsuario DESC
             """
         )
