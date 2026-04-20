@@ -108,12 +108,15 @@
     var passwordLengthValue = document.getElementById("passwordLengthValue");
     var refreshSuggestionBtn = document.getElementById("btnRefreshSuggestionInline");
     var startAtMs = 0;
+    var unlockedForEditing = false;
 
     var ruleLength = document.getElementById("ruleLength");
     var ruleUpper = document.getElementById("ruleUpper");
     var ruleLower = document.getElementById("ruleLower");
     var ruleNumber = document.getElementById("ruleNumber");
     var ruleSpecial = document.getElementById("ruleSpecial");
+
+    var emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
     function getSelectedLength() {
       if (!passwordLengthRange) return 12;
       var parsed = parseInt(passwordLengthRange.value, 10);
@@ -143,7 +146,6 @@
         notificationTarget.setCustomValidity("Debes ingresar un correo para enviar las credenciales.");
         return;
       }
-      var emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
       if (!emailRegex.test(value)) {
         notificationTarget.setCustomValidity(
           "Correo inválido. Debe incluir dominio válido y terminar en .com, .co, .pe, etc."
@@ -158,31 +160,32 @@
       var usernameOk = !!(usernameInput && usernameInput.value.trim());
       if (!nombreOk || !usernameOk) return false;
       var targetValue = notificationTarget ? notificationTarget.value.trim() : "";
-      return !!targetValue;
+      return !!targetValue && emailRegex.test(targetValue);
     }
 
     function refreshPasswordLockState() {
       var ready = requiredFieldsReady();
       passwordInput.disabled = !ready;
       if (!ready) {
+        unlockedForEditing = false;
         passwordInput.value = "";
+        passwordInput.readOnly = true;
         startAtMs = 0;
         if (generationField) generationField.value = "0";
+      } else {
+        passwordInput.readOnly = !unlockedForEditing;
       }
       if (passwordLockHint) {
-        passwordLockHint.classList.toggle("d-none", ready);
+        passwordLockHint.classList.toggle("d-none", ready && unlockedForEditing);
       }
       if (toggleBtn) {
-        toggleBtn.disabled = !ready;
+        toggleBtn.disabled = !ready || !unlockedForEditing;
       }
       if (passwordLengthRange) {
-        passwordLengthRange.disabled = !ready;
+        passwordLengthRange.disabled = !ready || !unlockedForEditing;
       }
       if (refreshSuggestionBtn) {
-        refreshSuggestionBtn.disabled = !ready;
-      }
-      if (ready) {
-        applyGeneratedSuggestion(false);
+        refreshSuggestionBtn.disabled = !ready || !unlockedForEditing;
       }
       refreshMeter();
     }
@@ -214,11 +217,31 @@
 
     if (toggleBtn) {
       toggleBtn.addEventListener("click", function () {
-        if (passwordInput.disabled) return;
+        if (passwordInput.disabled || passwordInput.readOnly) return;
         var isPassword = passwordInput.getAttribute("type") === "password";
         passwordInput.setAttribute("type", isPassword ? "text" : "password");
       });
     }
+
+    passwordInput.addEventListener("click", function () {
+      if (!requiredFieldsReady()) return;
+      if (!unlockedForEditing) {
+        unlockedForEditing = true;
+        passwordInput.readOnly = false;
+        applyGeneratedSuggestion(false);
+        refreshPasswordLockState();
+      }
+    });
+
+    passwordInput.addEventListener("focus", function () {
+      if (!requiredFieldsReady()) return;
+      if (!unlockedForEditing) {
+        unlockedForEditing = true;
+        passwordInput.readOnly = false;
+        applyGeneratedSuggestion(false);
+        refreshPasswordLockState();
+      }
+    });
 
     if (passwordLengthRange) {
       passwordLengthRange.addEventListener("input", function () {
