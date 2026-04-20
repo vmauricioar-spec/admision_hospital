@@ -171,3 +171,42 @@
   }
 }
 
+@media (max-width: 767.98px) {
+  #recordsTable {
+    min-width: 980px;
+  }
+
+  .record-filters {
+    padding: 0.9rem !important;
+  }
+
+  .records-table-wrap {
+    padding-right: 0;
+  }
+
+  .btn-side-add-row {
+    position: fixed;
+    right: 14px;
+    bottom: 84px;
+    width: 44px;
+    height: 44px;
+    box-shadow: 0 12px 24px rgba(13, 110, 253, 0.3);
+  }
+
+  .btn-save-fixed {
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
+    width: auto;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    z-index: 1060;
+  }
+
+  .admission-toast {
+    min-width: 0;
+    width: min(420px, calc(100vw - 1rem));
+  }
+}
+
