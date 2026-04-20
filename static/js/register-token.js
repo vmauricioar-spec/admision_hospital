@@ -104,8 +104,9 @@
     var text = document.getElementById("passwordStrengthText");
     var passwordLockHint = document.getElementById("passwordLockHint");
     var generationField = document.getElementById("generationTimeMs");
-    var suggestionsList = document.getElementById("passwordSuggestions");
-    var refreshSuggestionsBtn = document.getElementById("btnRefreshSuggestions");
+    var passwordLengthRange = document.getElementById("passwordLengthRange");
+    var passwordLengthValue = document.getElementById("passwordLengthValue");
+    var refreshSuggestionBtn = document.getElementById("btnRefreshSuggestionInline");
     var startAtMs = 0;
 
     var ruleLength = document.getElementById("ruleLength");
@@ -113,42 +114,25 @@
     var ruleLower = document.getElementById("ruleLower");
     var ruleNumber = document.getElementById("ruleNumber");
     var ruleSpecial = document.getElementById("ruleSpecial");
-    var suggestionButtons = [];
+    function getSelectedLength() {
+      if (!passwordLengthRange) return 12;
+      var parsed = parseInt(passwordLengthRange.value, 10);
+      if (isNaN(parsed)) return 12;
+      return Math.max(8, Math.min(15, parsed));
+    }
 
-    function applySuggestion(password) {
+    function updateLengthLabel() {
+      if (!passwordLengthValue) return;
+      passwordLengthValue.textContent = String(getSelectedLength());
+    }
+
+    function applyGeneratedSuggestion(forceReplace) {
       if (!passwordInput || passwordInput.disabled) return;
-      passwordInput.value = password;
+      if (!forceReplace && passwordInput.value) return;
+      passwordInput.value = generateStrongSuggestion(getSelectedLength());
       if (!startAtMs) startAtMs = Date.now();
       refreshMeter();
       passwordInput.focus();
-    }
-
-    function renderSuggestions() {
-      if (!suggestionsList) return;
-      var generated = {};
-      var suggestions = [];
-      while (suggestions.length < 3) {
-        var candidate = generateStrongSuggestion(14);
-        if (!generated[candidate]) {
-          generated[candidate] = true;
-          suggestions.push(candidate);
-        }
-      }
-
-      suggestionButtons = [];
-      suggestionsList.innerHTML = "";
-      suggestions.forEach(function (pwd, idx) {
-        var btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "password-suggestion-item";
-        btn.setAttribute("aria-label", "Usar sugerencia de contraseña " + (idx + 1));
-        btn.textContent = pwd;
-        btn.addEventListener("click", function () {
-          applySuggestion(pwd);
-        });
-        suggestionsList.appendChild(btn);
-        suggestionButtons.push(btn);
-      });
     }
 
     function validateNotificationTarget() {
@@ -191,12 +175,15 @@
       if (toggleBtn) {
         toggleBtn.disabled = !ready;
       }
-      if (refreshSuggestionsBtn) {
-        refreshSuggestionsBtn.disabled = !ready;
+      if (passwordLengthRange) {
+        passwordLengthRange.disabled = !ready;
       }
-      suggestionButtons.forEach(function (btn) {
-        btn.disabled = !ready;
-      });
+      if (refreshSuggestionBtn) {
+        refreshSuggestionBtn.disabled = !ready;
+      }
+      if (ready) {
+        applyGeneratedSuggestion(false);
+      }
       refreshMeter();
     }
 
@@ -233,11 +220,18 @@
       });
     }
 
-    if (refreshSuggestionsBtn) {
-      refreshSuggestionsBtn.addEventListener("click", function () {
+    if (passwordLengthRange) {
+      passwordLengthRange.addEventListener("input", function () {
+        updateLengthLabel();
         if (passwordInput.disabled) return;
-        renderSuggestions();
-        refreshPasswordLockState();
+        applyGeneratedSuggestion(true);
+      });
+    }
+
+    if (refreshSuggestionBtn) {
+      refreshSuggestionBtn.addEventListener("click", function () {
+        if (passwordInput.disabled) return;
+        applyGeneratedSuggestion(true);
       });
     }
 
@@ -277,7 +271,7 @@
       });
     }
 
-    renderSuggestions();
+    updateLengthLabel();
     validateNotificationTarget();
     refreshPasswordLockState();
   }

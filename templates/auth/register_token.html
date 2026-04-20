@@ -69,15 +69,28 @@
                                     <li id="ruleSpecial">Al menos un carácter especial</li>
                                 </ul>
                                 <div class="password-suggestions mt-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <small class="text-muted">Sugerencias seguras (clic para usar)</small>
-                                        <button type="button" class="btn btn-link btn-sm p-0" id="btnRefreshSuggestions">
-                                            <i class="bi bi-arrow-repeat"></i> Regenerar
-                                        </button>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">Longitud sugerida</small>
+                                        <small class="fw-semibold"><span id="passwordLengthValue">12</span> caracteres</small>
                                     </div>
-                                    <div id="passwordSuggestions" class="d-grid gap-2"></div>
+                                    <input
+                                        type="range"
+                                        class="form-range"
+                                        id="passwordLengthRange"
+                                        min="8"
+                                        max="15"
+                                        step="1"
+                                        value="12"
+                                    >
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">8</small>
+                                        <button type="button" class="btn btn-link btn-sm p-0" id="btnRefreshSuggestionInline">
+                                            <i class="bi bi-arrow-repeat"></i> Nueva sugerencia
+                                        </button>
+                                        <small class="text-muted">15</small>
+                                    </div>
                                     <small class="form-text text-muted">
-                                        Recomendación: evita nombres, fechas o datos personales en tu contraseña.
+                                        La sugerencia aparece en el campo contraseña y puedes editarla libremente.
                                     </small>
                                 </div>
                             </div>
