@@ -134,33 +134,59 @@ def usuarios():
             return redirect(url_for('admin.usuarios'))
 
         try:
-            blockchain_service = SolanaBlockchainService()
-            user_id, _, _, _ = auth_service.create_user_with_blockchain(
+            user_id = auth_service.create_user(
                 username=username,
                 password=password,
                 nombre_completo=nombre_completo,
                 role=role,
-                blockchain_service=blockchain_service,
                 email=email,
             )
+        except pyodbc.Error:
+            flash('No se pudo crear el usuario en la base de datos.', 'danger')
+            return redirect(url_for('admin.usuarios'))
+        except Exception as exc:
+            flash(f'Ocurrió un error al crear el usuario: {exc}', 'danger')
+            return redirect(url_for('admin.usuarios'))
+
+        warnings = []
+
+        try:
+            salt_hex, commitment = auth_service.build_password_commitment(username, password)
+            blockchain_service = SolanaBlockchainService()
+            blockchain_service.registrar_password_hash(
+                username=username,
+                password_commitment=commitment,
+                salt_hex=salt_hex,
+                role=role,
+            )
+        except (BlockchainConfigError, BlockchainWriteError) as exc:
+            warnings.append(f'No se pudo registrar el hash en Solana: {exc}')
+        except Exception as exc:
+            warnings.append(f'Error inesperado al registrar hash en Solana: {exc}')
+
+        try:
             password_metric_repo.create(
                 usuario_id=user_id,
                 password_length=len(password),
                 generation_time_ms=generation_time_ms,
                 strength_label=_password_strength_label(password),
             )
-            notification_service.send_email_credentials(email, username, password)
-            flash('Usuario creado correctamente. Hash registrado en Solana y credenciales enviadas al correo.', 'success')
-        except NotificationConfigError as exc:
-            flash(f'Usuario creado, pero no se pudo enviar el correo: {exc}', 'warning')
-        except BlockchainConfigError as exc:
-            flash(f'No se pudo crear el usuario por configuración blockchain: {exc}', 'danger')
-        except BlockchainWriteError as exc:
-            flash(f'No se pudo registrar el hash en Solana: {exc}', 'danger')
-        except pyodbc.Error:
-            flash('No se pudo crear el usuario en la base de datos.', 'danger')
         except Exception as exc:
-            flash(f'Ocurrió un error al crear el usuario: {exc}', 'danger')
+            warnings.append(f'No se pudieron guardar métricas de contraseña: {exc}')
+
+        try:
+            notification_service.send_email_credentials(email, username, password)
+        except NotificationConfigError as exc:
+            warnings.append(f'No se pudo enviar el correo de credenciales: {exc}')
+        except Exception as exc:
+            warnings.append(f'Error inesperado al enviar correo de credenciales: {exc}')
+
+        if warnings:
+            flash('Usuario creado con advertencias.', 'warning')
+            for warning in warnings:
+                flash(warning, 'warning')
+        else:
+            flash('Usuario creado correctamente. Hash registrado en Solana y credenciales enviadas al correo.', 'success')
         return redirect(url_for('admin.usuarios'))
 
     return render_template('admin/usuarios.html', usuarios=usuario_repo.get_all())
