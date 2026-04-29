@@ -1,3 +1,4 @@
+import logging
 import os
 import traceback
 from flask import Flask, render_template, request
@@ -11,8 +12,22 @@ from Presentacion.Rutas.admin_routes import admin_bp
 from Presentacion.Rutas.admission_routes import admission_bp
 from Presentacion.sesion_cache import redirect_al_panel_si_hay_sesion, aplicar_no_cache_privado
 
+
+def _configure_app_logging() -> None:
+    """Asegura que INFO aparezca en logs de Render/Gunicorn (LOG_LEVEL opcional)."""
+    level_name = (os.getenv("LOG_LEVEL") or "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    for name in (
+        "app",
+        "Presentacion.Rutas.admin_routes",
+        "Aplicacion.Servicios.NotificationService",
+    ):
+        logging.getLogger(name).setLevel(level)
+
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "historias_clinicas_secret_key_2024")
+_configure_app_logging()
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(admin_bp)

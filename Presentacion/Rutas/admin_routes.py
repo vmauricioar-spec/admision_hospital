@@ -18,7 +18,10 @@ from Dominio.Entidades.Especialidad import Especialidad
 from Dominio.Entidades.Medico import Medico
 from Dominio.Entidades.Usuario import Usuario
 from datetime import datetime
+import logging
 import pyodbc
+
+_logger = logging.getLogger(__name__)
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 historia_service = HistoriaService()
@@ -148,6 +151,15 @@ def usuarios():
             flash(f'Ocurrió un error al crear el usuario: {exc}', 'danger')
             return redirect(url_for('admin.usuarios'))
 
+        mail_domain = email.split("@")[-1].lower() if "@" in email else ""
+        _logger.info(
+            "admin.usuarios: usuario creado en BD user_id=%s username=%s role=%s mail_domain=%s",
+            user_id,
+            username,
+            role,
+            mail_domain,
+        )
+
         warnings = []
 
         try:
@@ -160,8 +172,10 @@ def usuarios():
                 role=role,
             )
         except (BlockchainConfigError, BlockchainWriteError) as exc:
+            _logger.warning("admin.usuarios: Solana omitido user_id=%s: %s", user_id, exc)
             warnings.append(f'No se pudo registrar el hash en Solana: {exc}')
         except Exception as exc:
+            _logger.exception("admin.usuarios: error Solana user_id=%s", user_id)
             warnings.append(f'Error inesperado al registrar hash en Solana: {exc}')
 
         try:
@@ -172,13 +186,24 @@ def usuarios():
                 strength_label=_password_strength_label(password),
             )
         except Exception as exc:
+            _logger.exception("admin.usuarios: métricas contraseña user_id=%s", user_id)
             warnings.append(f'No se pudieron guardar métricas de contraseña: {exc}')
 
         try:
             notification_service.send_email_credentials(email, username, password)
         except NotificationConfigError as exc:
+            _logger.warning(
+                "admin.usuarios: correo credenciales config user_id=%s: %s",
+                user_id,
+                exc,
+            )
             warnings.append(f'No se pudo enviar el correo de credenciales: {exc}')
         except Exception as exc:
+            _logger.exception(
+                "admin.usuarios: correo credenciales falló user_id=%s errno=%s",
+                user_id,
+                getattr(exc, "errno", None),
+            )
             warnings.append(f'Error inesperado al enviar correo de credenciales: {exc}')
 
         if warnings:
