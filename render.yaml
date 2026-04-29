@@ -40,12 +40,10 @@ services:
         sync: false
       - key: GMAIL_APP_PASSWORD
         sync: false
-      - key: RESEND_API_KEY
-        sync: false
-      - key: RESEND_FROM_EMAIL
-        sync: false
-      - key: NOTIFICATION_PROVIDER
-        value: "auto"
+      - key: SMTP_SECURITY
+        value: "starttls"
+      - key: SMTP_TIMEOUT_SECONDS
+        value: "10"
       - key: WEB_CONCURRENCY
         value: "1"
       - key: GUNICORN_THREADS
