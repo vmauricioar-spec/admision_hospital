@@ -1,5 +1,6 @@
 import re
 import secrets
+import logging
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from Aplicacion.Servicios.AuthService import AuthService
@@ -16,6 +17,7 @@ from Persistencia.Repositorios.PasswordResetTokenRepository import PasswordReset
 from Presentacion.sesion_cache import redirect_al_panel_si_hay_sesion
 
 auth_bp = Blueprint('auth', __name__)
+_logger = logging.getLogger(__name__)
 historia_service = HistoriaService()
 auth_service = AuthService()
 token_service = TokenService()
@@ -220,12 +222,23 @@ def register_with_token(token):
                 strength_label=_password_strength_label(password),
             )
             token_service.use_token(token)
+            _logger.info(
+                "auth.register_with_token: usuario creado user_id=%s username=%s mail_domain=%s",
+                user_id,
+                username,
+                notification_target.split("@")[-1].lower() if "@" in notification_target else "",
+            )
 
             notification_info = []
             try:
                 notification_service.send_email_credentials(notification_target, username, password)
                 notification_info.append("Credenciales enviadas por correo.")
             except NotificationConfigError as exc:
+                _logger.warning(
+                    "auth.register_with_token: correo config user_id=%s: %s",
+                    user_id,
+                    exc,
+                )
                 return render_template(
                     'auth/register_token.html',
                     **_register_context(
@@ -239,6 +252,11 @@ def register_with_token(token):
                     ),
                 )
             except Exception as exc:
+                _logger.exception(
+                    "auth.register_with_token: error correo user_id=%s errno=%s",
+                    user_id,
+                    getattr(exc, "errno", None),
+                )
                 return render_template(
                     'auth/register_token.html',
                     **_register_context(

@@ -17,9 +17,17 @@ def _configure_app_logging() -> None:
     """Asegura que INFO aparezca en logs de Render/Gunicorn (LOG_LEVEL opcional)."""
     level_name = (os.getenv("LOG_LEVEL") or "INFO").upper()
     level = getattr(logging, level_name, logging.INFO)
+    logging.basicConfig(level=level, format="%(asctime)s %(levelname)s %(name)s: %(message)s", force=True)
+
+    gunicorn_error_logger = logging.getLogger("gunicorn.error")
+    if gunicorn_error_logger.handlers:
+        logging.getLogger().handlers = gunicorn_error_logger.handlers
+        logging.getLogger().setLevel(level)
+
     for name in (
         "app",
         "Presentacion.Rutas.admin_routes",
+        "Presentacion.Rutas.auth_routes",
         "Aplicacion.Servicios.NotificationService",
     ):
         logging.getLogger(name).setLevel(level)

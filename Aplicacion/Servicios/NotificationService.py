@@ -20,7 +20,8 @@ class NotificationService:
 
     def _smtp_ssl_send(self, msg: EmailMessage, log_context: str) -> None:
         to_addr = (msg.get("To") or "").strip()
-        _logger.info(
+        self._emit(
+            "INFO",
             "SMTP attempt [%s] host=%s port=%s from=%s to=%s",
             log_context,
             self.smtp_host,
@@ -40,7 +41,8 @@ class NotificationService:
                 smtp.send_message(msg)
         except OSError as exc:
             errno = getattr(exc, "errno", None)
-            _logger.exception(
+            self._emit(
+                "ERROR",
                 "SMTP OSError [%s] errno=%s host=%s port=%s: %s",
                 log_context,
                 errno,
@@ -48,26 +50,41 @@ class NotificationService:
                 self.smtp_port,
                 exc,
             )
+            _logger.exception("SMTP OSError traceback [%s]", log_context)
             raise
         except smtplib.SMTPException as exc:
-            _logger.exception(
+            self._emit(
+                "ERROR",
                 "SMTP protocol error [%s] host=%s port=%s: %s",
                 log_context,
                 self.smtp_host,
                 self.smtp_port,
                 exc,
             )
+            _logger.exception("SMTP protocol traceback [%s]", log_context)
             raise
         except Exception as exc:
-            _logger.exception(
+            self._emit(
+                "ERROR",
                 "SMTP unexpected error [%s] host=%s port=%s: %s",
                 log_context,
                 self.smtp_host,
                 self.smtp_port,
                 exc,
             )
+            _logger.exception("SMTP unexpected traceback [%s]", log_context)
             raise
-        _logger.info("SMTP success [%s] to=%s", log_context, to_addr)
+        self._emit("INFO", "SMTP success [%s] to=%s", log_context, to_addr)
+
+    def _emit(self, level: str, message: str, *args) -> None:
+        rendered = message % args if args else message
+        print(f"[{level}] NotificationService {rendered}", flush=True)
+        if level == "ERROR":
+            _logger.error(message, *args)
+        elif level == "WARNING":
+            _logger.warning(message, *args)
+        else:
+            _logger.info(message, *args)
 
     def send_email_credentials(self, to_email: str, username: str, password: str):
         if not self.gmail_user or not self.gmail_app_password:
