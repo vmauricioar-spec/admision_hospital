@@ -47,7 +47,6 @@ class NotificationService:
             # Forzar resolución a IPv4 antes de conectar
             try:
                 import socket
-                # Si host ya es IP, gethostbyname lo devuelve igual. Si es nombre, fuerza IPv4.
                 actual_host = socket.gethostbyname(host)
                 if actual_host != host:
                     self._emit("INFO", "Host %s resuelto a IPv4: %s", host, actual_host)
@@ -75,12 +74,12 @@ class NotificationService:
                 if current_host != self.smtp_host:
                     self._emit("INFO", "Intentando host alternativo: %s", current_host)
                 _do_send(current_host)
-                return # Éxito
+                self._emit("INFO", "SMTP success [%s] to=%s", log_context, to_addr)
+                return
             except (OSError, smtplib.SMTPConnectError, smtplib.SMTPException) as exc:
                 last_err = exc
                 self._emit("WARNING", "Fallo con %s: %s", current_host, exc)
                 
-                # Si es un error de red, intentar con todas las IPs disponibles para este host
                 is_network_err = getattr(exc, "errno", None) == 101 or "timed out" in str(exc).lower()
                 if is_network_err:
                     try:
@@ -91,47 +90,21 @@ class NotificationService:
                             try:
                                 self._emit("INFO", "Probando IP directa: %s", ip)
                                 _do_send(ip)
-                                return # Éxito
+                                self._emit("INFO", "SMTP success [%s] to=%s", log_context, to_addr)
+                                return
                             except Exception as e_ip:
                                 self._emit("WARNING", "Fallo IP %s: %s", ip, e_ip)
                     except Exception as e_dns:
                         self._emit("ERROR", "Error en resolución multi-IP para %s: %s", current_host, e_dns)
 
-        # Si llegamos aquí, fallaron todos los hosts e IPs
         if isinstance(last_err, OSError):
             errno = getattr(last_err, "errno", None)
-            self._emit(
-                "ERROR",
-                "SMTP SSL falló totalmente [%s] errno=%s host=%s: %s",
-                log_context,
-                errno,
-                self.smtp_host,
-                last_err,
-            )
-            _logger.exception("SMTP SSL failure traceback")
+            self._emit("ERROR", "SMTP SSL falló totalmente [%s] errno=%s host=%s: %s", log_context, errno, self.smtp_host, last_err)
+        else:
+            self._emit("ERROR", "SMTP SSL falló totalmente [%s] host=%s: %s", log_context, self.smtp_host, last_err)
+        
+        _logger.exception("SMTP SSL failure traceback [%s]", log_context)
         raise last_err
-            self._emit(
-                "ERROR",
-                "SMTP protocol error [%s] host=%s port=%s: %s",
-                log_context,
-                self.smtp_host,
-                self.smtp_port,
-                exc,
-            )
-            _logger.exception("SMTP protocol traceback [%s]", log_context)
-            raise
-        except Exception as exc:
-            self._emit(
-                "ERROR",
-                "SMTP unexpected error [%s] host=%s port=%s: %s",
-                log_context,
-                self.smtp_host,
-                self.smtp_port,
-                exc,
-            )
-            _logger.exception("SMTP unexpected traceback [%s]", log_context)
-            raise
-        self._emit("INFO", "SMTP success [%s] to=%s", log_context, to_addr)
 
     def _smtp_starttls_send(self, msg: EmailMessage, log_context: str) -> None:
         to_addr = (msg.get("To") or "").strip()
@@ -147,7 +120,6 @@ class NotificationService:
         context = ssl.create_default_context()
         
         def _do_send(host):
-            # Forzar resolución a IPv4
             try:
                 import socket
                 actual_host = socket.gethostbyname(host)
@@ -174,6 +146,7 @@ class NotificationService:
                 if current_host != self.smtp_host:
                     self._emit("INFO", "Intentando host alternativo STARTTLS: %s", current_host)
                 _do_send(current_host)
+                self._emit("INFO", "SMTP STARTTLS success [%s] to=%s", log_context, to_addr)
                 return
             except (OSError, smtplib.SMTPConnectError, smtplib.SMTPException) as exc:
                 last_err = exc
@@ -189,6 +162,7 @@ class NotificationService:
                             try:
                                 self._emit("INFO", "Probando IP directa STARTTLS: %s", ip)
                                 _do_send(ip)
+                                self._emit("INFO", "SMTP STARTTLS success [%s] to=%s", log_context, to_addr)
                                 return
                             except Exception as e_ip:
                                 self._emit("WARNING", "Fallo IP STARTTLS %s: %s", ip, e_ip)
@@ -197,38 +171,12 @@ class NotificationService:
 
         if isinstance(last_err, OSError):
             errno = getattr(last_err, "errno", None)
-            self._emit(
-                "ERROR",
-                "SMTP STARTTLS falló totalmente [%s] errno=%s host=%s: %s",
-                log_context,
-                errno,
-                self.smtp_host,
-                last_err,
-            )
-            _logger.exception("SMTP STARTTLS failure traceback")
+            self._emit("ERROR", "SMTP STARTTLS falló totalmente [%s] errno=%s host=%s: %s", log_context, errno, self.smtp_host, last_err)
+        else:
+            self._emit("ERROR", "SMTP STARTTLS falló totalmente [%s] host=%s: %s", log_context, self.smtp_host, last_err)
+            
+        _logger.exception("SMTP STARTTLS failure traceback [%s]", log_context)
         raise last_err
-            self._emit(
-                "ERROR",
-                "SMTP STARTTLS protocol error [%s] host=%s port=%s: %s",
-                log_context,
-                self.smtp_host,
-                self.smtp_port,
-                exc,
-            )
-            _logger.exception("SMTP STARTTLS protocol traceback [%s]", log_context)
-            raise
-        except Exception as exc:
-            self._emit(
-                "ERROR",
-                "SMTP STARTTLS unexpected error [%s] host=%s port=%s: %s",
-                log_context,
-                self.smtp_host,
-                self.smtp_port,
-                exc,
-            )
-            _logger.exception("SMTP STARTTLS unexpected traceback [%s]", log_context)
-            raise
-        self._emit("INFO", "SMTP STARTTLS success [%s] to=%s", log_context, to_addr)
 
     def _smtp_send(self, msg: EmailMessage, log_context: str) -> None:
         # Si se especifica un modo, intentarlo, pero si falla con error de red, 
