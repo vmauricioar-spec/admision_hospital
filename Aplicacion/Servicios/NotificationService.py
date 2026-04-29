@@ -43,47 +43,55 @@ class NotificationService:
         )
         context = ssl.create_default_context()
         
-        # Intentar conectar. Si falla con 'Network is unreachable', podría ser un problema de IPv6 en Render.
-        try:
+        def _do_send(host):
             with smtplib.SMTP_SSL(
-                self.smtp_host,
+                host,
                 self.smtp_port,
                 context=context,
                 timeout=self.smtp_timeout_seconds,
             ) as smtp:
                 smtp.login(self.gmail_user, self.gmail_app_password)
                 smtp.send_message(msg)
-        except OSError as exc:
-            if getattr(exc, "errno", None) == 101: # Network is unreachable
-                self._emit("WARNING", "Red inalcanzable (IPv6?), reintentando con IPv4...")
-                try:
-                    # Forzar resolución a IPv4
-                    import socket
-                    ipv4_host = socket.gethostbyname(self.smtp_host)
-                    with smtplib.SMTP_SSL(
-                        ipv4_host,
-                        self.smtp_port,
-                        context=context,
-                        timeout=self.smtp_timeout_seconds,
-                    ) as smtp:
-                        smtp.login(self.gmail_user, self.gmail_app_password)
-                        smtp.send_message(msg)
-                    self._emit("INFO", "SMTP success via IPv4 fallback [%s]", log_context)
-                    return
-                except Exception as e2:
-                    self._emit("ERROR", "Fallback IPv4 también falló: %s", e2)
+
+        try:
+            _do_send(self.smtp_host)
+        except (OSError, smtplib.SMTPConnectError) as exc:
+            # Error 101 (Unreachable) o Timeout suelen indicar problemas de IPv6 o bloqueo de puerto
+            is_network_err = getattr(exc, "errno", None) == 101 or "timed out" in str(exc).lower()
             
-            errno = getattr(exc, "errno", None)
-            self._emit(
-                "ERROR",
-                "SMTP OSError [%s] errno=%s host=%s port=%s: %s",
-                log_context,
-                errno,
-                self.smtp_host,
-                self.smtp_port,
-                exc,
-            )
-            _logger.exception("SMTP OSError traceback [%s]", log_context)
+            if is_network_err:
+                self._emit("WARNING", "Error de red (%s), intentando con IPs IPv4 directas...", exc)
+                try:
+                    import socket
+                    # Obtener todas las IPs IPv4 disponibles para el host
+                    addr_info = socket.getaddrinfo(self.smtp_host, self.smtp_port, socket.AF_INET, socket.SOCK_STREAM)
+                    ips = list(set([info[4][0] for info in addr_info]))
+                    
+                    for ip in ips:
+                        try:
+                            self._emit("INFO", "Probando fallback IPv4: %s", ip)
+                            _do_send(ip)
+                            self._emit("INFO", "SMTP success via IPv4 fallback (%s) [%s]", ip, log_context)
+                            return
+                        except Exception as e_ip:
+                            self._emit("WARNING", "Fallo IP %s: %s", ip, e_ip)
+                    
+                except Exception as e_dns:
+                    self._emit("ERROR", "Error en resolución/fallback IPv4: %s", e_dns)
+            
+            # Si llegamos aquí y es un OSError, reportarlo
+            if isinstance(exc, OSError):
+                errno = getattr(exc, "errno", None)
+                self._emit(
+                    "ERROR",
+                    "SMTP OSError [%s] errno=%s host=%s port=%s: %s",
+                    log_context,
+                    errno,
+                    self.smtp_host,
+                    self.smtp_port,
+                    exc,
+                )
+                _logger.exception("SMTP OSError traceback [%s]", log_context)
             raise
         except smtplib.SMTPException as exc:
             self._emit(
@@ -122,7 +130,7 @@ class NotificationService:
         )
         context = ssl.create_default_context()
         
-        def _try_connect(host):
+        def _do_send(host):
             with smtplib.SMTP(host, self.smtp_port, timeout=self.smtp_timeout_seconds) as smtp:
                 smtp.ehlo()
                 smtp.starttls(context=context)
@@ -131,30 +139,40 @@ class NotificationService:
                 smtp.send_message(msg)
 
         try:
-            _try_connect(self.smtp_host)
-        except OSError as exc:
-            if getattr(exc, "errno", None) == 101: # Network is unreachable
-                self._emit("WARNING", "Red inalcanzable en STARTTLS, reintentando con IPv4...")
+            _do_send(self.smtp_host)
+        except (OSError, smtplib.SMTPConnectError) as exc:
+            is_network_err = getattr(exc, "errno", None) == 101 or "timed out" in str(exc).lower()
+            
+            if is_network_err:
+                self._emit("WARNING", "Error de red STARTTLS (%s), intentando con IPs IPv4 directas...", exc)
                 try:
                     import socket
-                    ipv4_host = socket.gethostbyname(self.smtp_host)
-                    _try_connect(ipv4_host)
-                    self._emit("INFO", "SMTP STARTTLS success via IPv4 fallback [%s]", log_context)
-                    return
-                except Exception as e2:
-                    self._emit("ERROR", "Fallback IPv4 STARTTLS también falló: %s", e2)
+                    addr_info = socket.getaddrinfo(self.smtp_host, self.smtp_port, socket.AF_INET, socket.SOCK_STREAM)
+                    ips = list(set([info[4][0] for info in addr_info]))
+                    
+                    for ip in ips:
+                        try:
+                            self._emit("INFO", "Probando fallback IPv4 STARTTLS: %s", ip)
+                            _do_send(ip)
+                            self._emit("INFO", "SMTP STARTTLS success via IPv4 fallback (%s) [%s]", ip, log_context)
+                            return
+                        except Exception as e_ip:
+                            self._emit("WARNING", "Fallo IP %s: %s", ip, e_ip)
+                except Exception as e_dns:
+                    self._emit("ERROR", "Error en resolución/fallback IPv4 STARTTLS: %s", e_dns)
             
-            errno = getattr(exc, "errno", None)
-            self._emit(
-                "ERROR",
-                "SMTP STARTTLS OSError [%s] errno=%s host=%s port=%s: %s",
-                log_context,
-                errno,
-                self.smtp_host,
-                self.smtp_port,
-                exc,
-            )
-            _logger.exception("SMTP STARTTLS OSError traceback [%s]", log_context)
+            if isinstance(exc, OSError):
+                errno = getattr(exc, "errno", None)
+                self._emit(
+                    "ERROR",
+                    "SMTP STARTTLS OSError [%s] errno=%s host=%s port=%s: %s",
+                    log_context,
+                    errno,
+                    self.smtp_host,
+                    self.smtp_port,
+                    exc,
+                )
+                _logger.exception("SMTP STARTTLS OSError traceback [%s]", log_context)
             raise
         except smtplib.SMTPException as exc:
             self._emit(
@@ -190,19 +208,22 @@ class NotificationService:
             if self.smtp_security == "starttls":
                 self._smtp_starttls_send(msg, log_context)
                 return
-        except OSError as e:
-            if getattr(e, "errno", None) == 101:
+        except (OSError, smtplib.SMTPConnectError) as e:
+            is_network_err = getattr(e, "errno", None) == 101 or "timed out" in str(e).lower()
+            if is_network_err:
                 self._emit("WARNING", "Error de red en modo %s, intentando auto-fallback...", self.smtp_security)
             else:
                 raise e
 
         # auto mode: try configured port first, then fallback to the other common Gmail port.
         original_port = self.smtp_port
-        attempts = [original_port]
+        attempts = []
         if original_port == 465:
-            attempts.append(587)
+            attempts = [587] # Solo el otro, el original ya falló arriba
         elif original_port == 587:
-            attempts.append(465)
+            attempts = [465]
+        else:
+            attempts = [465, 587]
 
         last_exc = None
         for port in attempts:
