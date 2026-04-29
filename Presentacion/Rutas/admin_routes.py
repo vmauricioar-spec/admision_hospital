@@ -1,4 +1,5 @@
 import re
+import time
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
 from Aplicacion.Servicios.HistoriaService import HistoriaService
 from Aplicacion.Servicios.AuthService import AuthService
@@ -104,6 +105,7 @@ def generar_link():
 @admin_bp.route('/usuarios', methods=['GET', 'POST'])
 def usuarios():
     if request.method == 'POST':
+        start_ts = time.perf_counter()
         username = (request.form.get('username') or '').strip()
         password = (request.form.get('password') or '').strip()
         nombre_completo = (request.form.get('nombre_completo') or '').strip()
@@ -150,6 +152,11 @@ def usuarios():
         except Exception as exc:
             flash(f'Ocurrió un error al crear el usuario: {exc}', 'danger')
             return redirect(url_for('admin.usuarios'))
+
+        print(
+            f"[INFO] admin.usuarios created_db user_id={user_id} username={username}",
+            flush=True,
+        )
 
         mail_domain = email.split("@")[-1].lower() if "@" in email else ""
         _logger.info(
@@ -205,6 +212,12 @@ def usuarios():
                 getattr(exc, "errno", None),
             )
             warnings.append(f'Error inesperado al enviar correo de credenciales: {exc}')
+
+        elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+        print(
+            f"[INFO] admin.usuarios finished user_id={user_id} elapsed_ms={elapsed_ms} warnings={len(warnings)}",
+            flush=True,
+        )
 
         if warnings:
             flash('Usuario creado con advertencias.', 'warning')

@@ -17,6 +17,7 @@ class NotificationService:
         self.smtp_port = int((os.getenv("GMAIL_SMTP_PORT") or "465").strip())
         self.gmail_user = (os.getenv("GMAIL_USER") or "").strip()
         self.gmail_app_password = (os.getenv("GMAIL_APP_PASSWORD") or "").strip()
+        self.smtp_timeout_seconds = max(int((os.getenv("SMTP_TIMEOUT_SECONDS") or "6").strip()), 1)
 
     def _smtp_ssl_send(self, msg: EmailMessage, log_context: str) -> None:
         to_addr = (msg.get("To") or "").strip()
@@ -35,7 +36,7 @@ class NotificationService:
                 self.smtp_host,
                 self.smtp_port,
                 context=context,
-                timeout=20,
+                timeout=self.smtp_timeout_seconds,
             ) as smtp:
                 smtp.login(self.gmail_user, self.gmail_app_password)
                 smtp.send_message(msg)

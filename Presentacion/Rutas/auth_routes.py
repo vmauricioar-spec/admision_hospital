@@ -1,6 +1,7 @@
 import re
 import secrets
 import logging
+import time
 
 from flask import Blueprint, render_template, request, redirect, url_for, session, jsonify
 from Aplicacion.Servicios.AuthService import AuthService
@@ -134,6 +135,7 @@ def register_with_token(token):
         return render_template('auth/token_invalid.html', message='El enlace ha expirado o ya fue utilizado.')
 
     if request.method == 'POST':
+        start_ts = time.perf_counter()
         username = (request.form.get('username') or '').strip()
         password = request.form.get('password') or ''
         nombre_completo = (request.form.get('nombre_completo') or '').strip()
@@ -141,6 +143,11 @@ def register_with_token(token):
         generation_time_ms_raw = (request.form.get('generation_time_ms') or '0').strip()
 
         if not username or not nombre_completo or not password:
+            elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+            print(
+                f"[INFO] auth.register_with_token finished user_id={user_id} elapsed_ms={elapsed_ms} warnings=0",
+                flush=True,
+            )
             return render_template(
                 'auth/register_token.html',
                 **_register_context(
@@ -228,6 +235,10 @@ def register_with_token(token):
                 username,
                 notification_target.split("@")[-1].lower() if "@" in notification_target else "",
             )
+            print(
+                f"[INFO] auth.register_with_token created_db user_id={user_id} username={username}",
+                flush=True,
+            )
 
             notification_info = []
             try:
@@ -238,6 +249,11 @@ def register_with_token(token):
                     "auth.register_with_token: correo config user_id=%s: %s",
                     user_id,
                     exc,
+                )
+                elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+                print(
+                    f"[INFO] auth.register_with_token finished user_id={user_id} elapsed_ms={elapsed_ms} warnings=1",
+                    flush=True,
                 )
                 return render_template(
                     'auth/register_token.html',
@@ -256,6 +272,11 @@ def register_with_token(token):
                     "auth.register_with_token: error correo user_id=%s errno=%s",
                     user_id,
                     getattr(exc, "errno", None),
+                )
+                elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+                print(
+                    f"[INFO] auth.register_with_token finished user_id={user_id} elapsed_ms={elapsed_ms} warnings=1",
+                    flush=True,
                 )
                 return render_template(
                     'auth/register_token.html',
@@ -283,7 +304,13 @@ def register_with_token(token):
                     notification_info=notification_info,
                 ),
             )
+            
         except BlockchainConfigError as exc:
+            elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+            print(
+                f"[INFO] auth.register_with_token finished username={username} elapsed_ms={elapsed_ms} error=BlockchainConfigError",
+                flush=True,
+            )
             return render_template(
                 'auth/register_token.html',
                 **_register_context(
@@ -297,6 +324,11 @@ def register_with_token(token):
                 ),
             )
         except BlockchainWriteError as exc:
+            elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+            print(
+                f"[INFO] auth.register_with_token finished username={username} elapsed_ms={elapsed_ms} error=BlockchainWriteError",
+                flush=True,
+            )
             return render_template(
                 'auth/register_token.html',
                 **_register_context(
@@ -310,6 +342,11 @@ def register_with_token(token):
                 ),
             )
         except Exception as exc:
+            elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
+            print(
+                f"[INFO] auth.register_with_token finished username={username} elapsed_ms={elapsed_ms} error=Exception",
+                flush=True,
+            )
             return render_template(
                 'auth/register_token.html',
                 **_register_context(
