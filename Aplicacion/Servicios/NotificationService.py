@@ -42,6 +42,8 @@ class NotificationService:
             to_addr,
         )
         context = ssl.create_default_context()
+        
+        # Intentar conectar. Si falla con 'Network is unreachable', podría ser un problema de IPv6 en Render.
         try:
             with smtplib.SMTP_SSL(
                 self.smtp_host,
@@ -52,6 +54,25 @@ class NotificationService:
                 smtp.login(self.gmail_user, self.gmail_app_password)
                 smtp.send_message(msg)
         except OSError as exc:
+            if getattr(exc, "errno", None) == 101: # Network is unreachable
+                self._emit("WARNING", "Red inalcanzable (IPv6?), reintentando con IPv4...")
+                try:
+                    # Forzar resolución a IPv4
+                    import socket
+                    ipv4_host = socket.gethostbyname(self.smtp_host)
+                    with smtplib.SMTP_SSL(
+                        ipv4_host,
+                        self.smtp_port,
+                        context=context,
+                        timeout=self.smtp_timeout_seconds,
+                    ) as smtp:
+                        smtp.login(self.gmail_user, self.gmail_app_password)
+                        smtp.send_message(msg)
+                    self._emit("INFO", "SMTP success via IPv4 fallback [%s]", log_context)
+                    return
+                except Exception as e2:
+                    self._emit("ERROR", "Fallback IPv4 también falló: %s", e2)
+            
             errno = getattr(exc, "errno", None)
             self._emit(
                 "ERROR",
@@ -100,14 +121,29 @@ class NotificationService:
             to_addr,
         )
         context = ssl.create_default_context()
-        try:
-            with smtplib.SMTP(self.smtp_host, self.smtp_port, timeout=self.smtp_timeout_seconds) as smtp:
+        
+        def _try_connect(host):
+            with smtplib.SMTP(host, self.smtp_port, timeout=self.smtp_timeout_seconds) as smtp:
                 smtp.ehlo()
                 smtp.starttls(context=context)
                 smtp.ehlo()
                 smtp.login(self.gmail_user, self.gmail_app_password)
                 smtp.send_message(msg)
+
+        try:
+            _try_connect(self.smtp_host)
         except OSError as exc:
+            if getattr(exc, "errno", None) == 101: # Network is unreachable
+                self._emit("WARNING", "Red inalcanzable en STARTTLS, reintentando con IPv4...")
+                try:
+                    import socket
+                    ipv4_host = socket.gethostbyname(self.smtp_host)
+                    _try_connect(ipv4_host)
+                    self._emit("INFO", "SMTP STARTTLS success via IPv4 fallback [%s]", log_context)
+                    return
+                except Exception as e2:
+                    self._emit("ERROR", "Fallback IPv4 STARTTLS también falló: %s", e2)
+            
             errno = getattr(exc, "errno", None)
             self._emit(
                 "ERROR",
@@ -145,12 +181,20 @@ class NotificationService:
         self._emit("INFO", "SMTP STARTTLS success [%s] to=%s", log_context, to_addr)
 
     def _smtp_send(self, msg: EmailMessage, log_context: str) -> None:
-        if self.smtp_security == "ssl":
-            self._smtp_ssl_send(msg, log_context)
-            return
-        if self.smtp_security == "starttls":
-            self._smtp_starttls_send(msg, log_context)
-            return
+        # Si se especifica un modo, intentarlo, pero si falla con error de red, 
+        # permitir fallback a 'auto' para máxima resiliencia.
+        try:
+            if self.smtp_security == "ssl":
+                self._smtp_ssl_send(msg, log_context)
+                return
+            if self.smtp_security == "starttls":
+                self._smtp_starttls_send(msg, log_context)
+                return
+        except OSError as e:
+            if getattr(e, "errno", None) == 101:
+                self._emit("WARNING", "Error de red en modo %s, intentando auto-fallback...", self.smtp_security)
+            else:
+                raise e
 
         # auto mode: try configured port first, then fallback to the other common Gmail port.
         original_port = self.smtp_port
