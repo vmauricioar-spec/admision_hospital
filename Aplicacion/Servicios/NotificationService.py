@@ -68,6 +68,7 @@ class NotificationService:
             headers={
                 "Authorization": f"Bearer {self.resend_api_key}",
                 "Content-Type": "application/json",
+                "User-Agent": "historias-admision/1.0",
             },
             method="POST",
         )
