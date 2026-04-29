@@ -1,6 +1,8 @@
 import os
+import traceback
 from flask import Flask, render_template, request
 from dotenv import load_dotenv
+import pyodbc
 
 load_dotenv()
 
@@ -31,6 +33,34 @@ def index():
     if ya is not None:
         return ya
     return render_template('index.html')
+
+
+@app.errorhandler(pyodbc.Error)
+def handle_db_error(error):
+    app.logger.exception("Database error: %s", error)
+    if request.path.startswith("/admission/") and (
+        request.is_json or "application/json" in (request.headers.get("Accept", ""))
+    ):
+        return {"status": "error", "message": "Error de base de datos. Intenta nuevamente."}, 500
+    return render_template(
+        'error.html',
+        title="Error de base de datos",
+        message="Tuvimos un problema temporal con la base de datos. Intenta de nuevo en unos segundos.",
+    ), 500
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    app.logger.error("Unhandled exception: %s\n%s", error, traceback.format_exc())
+    if request.path.startswith("/admission/") and (
+        request.is_json or "application/json" in (request.headers.get("Accept", ""))
+    ):
+        return {"status": "error", "message": "Ocurrió un error interno. Intenta nuevamente."}, 500
+    return render_template(
+        'error.html',
+        title="Error interno del servidor",
+        message="Ocurrió un error inesperado. Por favor intenta nuevamente.",
+    ), 500
 
 if __name__ == '__main__':
     port = int(os.getenv("PORT", "5000"))

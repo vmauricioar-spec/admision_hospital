@@ -1,10 +1,12 @@
-import pyodbc
 import os
+import threading
 from typing import Optional
 
+import pyodbc
+
+
 class DatabaseConnection:
-    _instance: Optional['DatabaseConnection'] = None
-    _connection: Optional[pyodbc.Connection] = None
+    _instance: Optional["DatabaseConnection"] = None
 
     def __init__(self):
         self.server = os.environ.get("DB_SERVER", "DESKTOP-B8EBRI2")
@@ -24,6 +26,8 @@ class DatabaseConnection:
             else self.trusted
         )
         self.connection_timeout = int(os.environ.get("DB_CONNECTION_TIMEOUT", "30"))
+        # pyodbc connections must not be shared across threads; Gunicorn may run several.
+        self._local = threading.local()
 
     def _build_connection_string(self) -> str:
         parts = [
@@ -43,18 +47,44 @@ class DatabaseConnection:
         return "".join(parts)
 
     @staticmethod
-    def get_instance() -> 'DatabaseConnection':
+    def get_instance() -> "DatabaseConnection":
         if DatabaseConnection._instance is None:
             DatabaseConnection._instance = DatabaseConnection()
         return DatabaseConnection._instance
 
+    def _thread_conn(self) -> Optional[pyodbc.Connection]:
+        return getattr(self._local, "connection", None)
+
+    def _set_thread_conn(self, conn: Optional[pyodbc.Connection]) -> None:
+        self._local.connection = conn
+
     def get_connection(self) -> pyodbc.Connection:
-        if self._connection is None:
-            conn_str = self._build_connection_string()
-            self._connection = pyodbc.connect(conn_str)
-        return self._connection
+        conn_str = self._build_connection_string()
+        conn = self._thread_conn()
+        if conn is None:
+            self._set_thread_conn(pyodbc.connect(conn_str))
+            return self._thread_conn()
+
+        try:
+            # Keep-alive check to avoid stale pooled connections on hosted environments.
+            cursor = conn.cursor()
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+            cursor.close()
+            return conn
+        except pyodbc.Error:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            self._set_thread_conn(pyodbc.connect(conn_str))
+            return self._thread_conn()
 
     def close(self):
-        if self._connection:
-            self._connection.close()
-            self._connection = None
+        conn = self._thread_conn()
+        if conn:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            self._set_thread_conn(None)

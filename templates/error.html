@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title or "Error" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <main class="container py-5">
+        <section class="card content-card p-4">
+            <h1 class="h4 mb-3">{{ title or "Error" }}</h1>
+            <p class="mb-4">{{ message or "Ocurrió un error inesperado." }}</p>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">Volver al inicio</a>
+        </section>
+    </main>
+</body>
+</html>
