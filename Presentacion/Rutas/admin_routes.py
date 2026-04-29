@@ -204,14 +204,14 @@ def usuarios():
                 user_id,
                 exc,
             )
-            warnings.append(f'No se pudo enviar el correo de credenciales: {exc}')
+            # No bloquear ni mostrar advertencia al usuario final por fallas de correo.
         except Exception as exc:
             _logger.exception(
                 "admin.usuarios: correo credenciales falló user_id=%s errno=%s",
                 user_id,
                 getattr(exc, "errno", None),
             )
-            warnings.append(f'Error inesperado al enviar correo de credenciales: {exc}')
+            # No bloquear ni mostrar advertencia al usuario final por fallas de correo.
 
         elapsed_ms = int((time.perf_counter() - start_ts) * 1000)
         print(
