@@ -42,6 +42,17 @@ app.register_blueprint(admin_bp)
 app.register_blueprint(admission_bp)
 
 
+@app.route("/health")
+def health():
+    """Comprueba que el servicio responde y que los logs de runtime lleguen a Render."""
+    import time
+
+    ts = time.time()
+    print(f"[INFO] health ping ts={ts}", flush=True)
+    app.logger.info("health ping ts=%s", ts)
+    return {"status": "ok"}, 200
+
+
 @app.after_request
 def _no_cache_html_responses(response):
     """Impide ver login o panel desde caché al usar Atrás/Adelante sin nueva petición al servidor."""
