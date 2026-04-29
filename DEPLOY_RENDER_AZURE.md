@@ -42,12 +42,12 @@ Configura estas variables:
 - `DB_CONNECTION_TIMEOUT=30`
 - `ALCHEMY_SOLANA_RPC_URL=<tu_url_rpc>`
 - `SOLANA_SIGNER_PRIVATE_KEY=<tu_private_key_backend>`
-- `GMAIL_SMTP_HOST=smtp.gmail.com`
-- `GMAIL_SMTP_PORT=587`
-- `SMTP_SECURITY=starttls`
-- `SMTP_TIMEOUT_SECONDS=10`
-- `GMAIL_USER=<tu_correo>`
-- `GMAIL_APP_PASSWORD=<tu_app_password>`
+- `EMAIL_DELIVERY_ENABLED=true`
+- `GMAIL_API_CLIENT_ID=<tu_client_id>`
+- `GMAIL_API_CLIENT_SECRET=<tu_client_secret>`
+- `GMAIL_API_REFRESH_TOKEN=<tu_refresh_token>`
+- `GMAIL_API_SENDER=<tu_correo_gmail>`
+- `GMAIL_API_TIMEOUT_SECONDS=15`
 
 ## 5) Verificación post-deploy
 1. Abrir URL pública de Render.
@@ -64,6 +64,6 @@ Configura estas variables:
 - Error de conexión TLS:
   - confirma `DB_ENCRYPT=yes` y `DB_TRUST_SERVER_CERTIFICATE=no`.
 - Error al enviar correo:
-  - revisa `GMAIL_USER` y `GMAIL_APP_PASSWORD`.
+  - revisa `GMAIL_API_CLIENT_ID`, `GMAIL_API_CLIENT_SECRET`, `GMAIL_API_REFRESH_TOKEN` y `GMAIL_API_SENDER`.
 - Error Solana:
   - revisa `ALCHEMY_SOLANA_RPC_URL` y fondos de la wallet firmante en Devnet.
