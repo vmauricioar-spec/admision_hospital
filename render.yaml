@@ -35,7 +35,7 @@ services:
       - key: GMAIL_SMTP_HOST
         value: "smtp.gmail.com"
       - key: GMAIL_SMTP_PORT
-        value: "465"
+        value: "587"
       - key: GMAIL_USER
         sync: false
       - key: GMAIL_APP_PASSWORD

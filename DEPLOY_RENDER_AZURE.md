@@ -43,7 +43,9 @@ Configura estas variables:
 - `ALCHEMY_SOLANA_RPC_URL=<tu_url_rpc>`
 - `SOLANA_SIGNER_PRIVATE_KEY=<tu_private_key_backend>`
 - `GMAIL_SMTP_HOST=smtp.gmail.com`
-- `GMAIL_SMTP_PORT=465`
+- `GMAIL_SMTP_PORT=587`
+- `SMTP_SECURITY=starttls`
+- `SMTP_TIMEOUT_SECONDS=10`
 - `GMAIL_USER=<tu_correo>`
 - `GMAIL_APP_PASSWORD=<tu_app_password>`
 
