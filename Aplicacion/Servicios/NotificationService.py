@@ -19,6 +19,7 @@ class NotificationService:
         self.gmail_app_password = (os.getenv("GMAIL_APP_PASSWORD") or "").strip()
         self.smtp_timeout_seconds = max(int((os.getenv("SMTP_TIMEOUT_SECONDS") or "6").strip()), 1)
         self.smtp_security = (os.getenv("SMTP_SECURITY") or "auto").strip().lower()
+        self.email_delivery_enabled = (os.getenv("EMAIL_DELIVERY_ENABLED") or "false").strip().lower() in ("1", "true", "yes", "y")
 
     def _emit(self, level: str, message: str, *args) -> None:
         rendered = message % args if args else message
@@ -222,6 +223,10 @@ class NotificationService:
             raise last_exc
 
     def send_email_credentials(self, to_email: str, username: str, password: str):
+        if not self.email_delivery_enabled:
+            self._emit("INFO", "Email delivery disabled. Skipping credentials email to=%s", to_email)
+            return "disabled"
+
         if not self.gmail_user or not self.gmail_app_password:
             raise NotificationConfigError(
                 "Falta configurar GMAIL_USER y/o GMAIL_APP_PASSWORD."
@@ -246,6 +251,10 @@ class NotificationService:
         return "ok"
 
     def send_password_reset_link(self, to_email: str, nombre: str, reset_link: str):
+        if not self.email_delivery_enabled:
+            self._emit("INFO", "Email delivery disabled. Skipping reset link email to=%s", to_email)
+            return "disabled"
+
         if not self.gmail_user or not self.gmail_app_password:
             raise NotificationConfigError(
                 "Falta configurar GMAIL_USER y/o GMAIL_APP_PASSWORD."
