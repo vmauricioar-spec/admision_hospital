@@ -4,6 +4,7 @@ import traceback
 from flask import Flask, render_template, request
 from dotenv import load_dotenv
 import pyodbc
+from werkzeug.exceptions import HTTPException
 
 load_dotenv()
 
@@ -53,6 +54,11 @@ def health():
     return {"status": "ok"}, 200
 
 
+@app.route("/favicon.ico")
+def favicon():
+    return "", 204
+
+
 @app.after_request
 def _no_cache_html_responses(response):
     """Impide ver login o panel desde caché al usar Atrás/Adelante sin nueva petición al servidor."""
@@ -85,6 +91,8 @@ def handle_db_error(error):
 
 @app.errorhandler(Exception)
 def handle_unexpected_error(error):
+    if isinstance(error, HTTPException):
+        return error
     app.logger.error("Unhandled exception: %s\n%s", error, traceback.format_exc())
     if request.path.startswith("/admission/") and (
         request.is_json or "application/json" in (request.headers.get("Accept", ""))
