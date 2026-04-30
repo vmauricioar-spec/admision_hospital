@@ -214,19 +214,19 @@
   }
 
   function createChart(canvas, type, labels, values, label, color) {
-    var isDoughnut = type === "doughnut";
+    var isPieFamily = type === "doughnut" || type === "pie";
     var baseOptions = {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          display: isDoughnut,
+          display: isPieFamily,
           position: "bottom",
         },
       },
     };
 
-    if (!isDoughnut) {
+    if (!isPieFamily) {
       baseOptions.scales = {
         y: {
           beginAtZero: true,
@@ -246,7 +246,7 @@
             label: label,
             data: values.length ? values : [0],
             borderColor: color,
-            backgroundColor: isDoughnut
+            backgroundColor: isPieFamily
               ? [
                   "#f97316",
                   "#fb923c",
@@ -342,7 +342,7 @@
     destroyCharts();
     chartOne = createChart(
       chartOneCanvas,
-      "bar",
+      "pie",
       dist.labels,
       dist.values,
       "Longitud promedio por usuario",
