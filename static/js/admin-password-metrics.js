@@ -175,7 +175,8 @@
       function (item) {
         return item.passwordLength;
       },
-      true
+      true,
+      0
     );
     return grouped;
   }
