@@ -97,6 +97,42 @@
     };
   }
 
+  function aggregateByWeekday(items) {
+    var weekdayOrder = [1, 2, 3, 4, 5, 6, 0];
+    var weekdayNames = {
+      0: "Dom",
+      1: "Lun",
+      2: "Mar",
+      3: "Mie",
+      4: "Jue",
+      5: "Vie",
+      6: "Sab",
+    };
+    var map = {
+      0: 0,
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+      6: 0,
+    };
+
+    items.forEach(function (item) {
+      var day = item.createdAt.getDay();
+      map[day] += 1;
+    });
+
+    return {
+      labels: weekdayOrder.map(function (day) {
+        return weekdayNames[day];
+      }),
+      values: weekdayOrder.map(function (day) {
+        return map[day];
+      }),
+    };
+  }
+
   function topUsers(items, valueGetter, avgMode, limit) {
     var map = {};
     items.forEach(function (item) {
@@ -118,7 +154,10 @@
     rows.sort(function (a, b) {
       return b.value - a.value;
     });
-    rows = rows.slice(0, limit || 8);
+    var maxRows = typeof limit === "number" ? limit : 8;
+    if (maxRows > 0) {
+      rows = rows.slice(0, maxRows);
+    }
     return {
       labels: rows.map(function (r) {
         return r.name;
@@ -128,6 +167,17 @@
       }),
       rows: rows,
     };
+  }
+
+  function averageLengthByUser(items) {
+    var grouped = topUsers(
+      items,
+      function (item) {
+        return item.passwordLength;
+      },
+      true
+    );
+    return grouped;
   }
 
   function lengthDistribution(items) {
@@ -164,6 +214,29 @@
   }
 
   function createChart(canvas, type, labels, values, label, color) {
+    var isDoughnut = type === "doughnut";
+    var baseOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: isDoughnut,
+          position: "bottom",
+        },
+      },
+    };
+
+    if (!isDoughnut) {
+      baseOptions.scales = {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0,
+          },
+        },
+      };
+    }
+
     return new Chart(canvas, {
       type: type,
       data: {
@@ -173,7 +246,22 @@
             label: label,
             data: values.length ? values : [0],
             borderColor: color,
-            backgroundColor: type === "line" ? "rgba(13,110,253,0.15)" : color,
+            backgroundColor: isDoughnut
+              ? [
+                  "#f97316",
+                  "#fb923c",
+                  "#fdba74",
+                  "#fed7aa",
+                  "#ffedd5",
+                  "#7c3aed",
+                  "#8b5cf6",
+                  "#a78bfa",
+                  "#c4b5fd",
+                  "#ddd6fe",
+                ]
+              : type === "line"
+              ? "rgba(13,110,253,0.15)"
+              : color,
             fill: type === "line",
             tension: 0.28,
             borderWidth: 2,
@@ -181,23 +269,7 @@
           },
         ],
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: {
-            display: false,
-          },
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            ticks: {
-              precision: 0,
-            },
-          },
-        },
-      },
+      options: baseOptions,
     });
   }
 
@@ -208,7 +280,7 @@
   function renderGenerated(filtered) {
     modalTitleEl.textContent = "Analítica: Contraseñas generadas";
     chartOneTitleEl.textContent = "Generación diaria";
-    chartTwoTitleEl.textContent = "Top usuarios por volumen";
+    chartTwoTitleEl.textContent = "Variación por día de semana";
 
     var daily = aggregateByDay(
       filtered,
@@ -217,14 +289,7 @@
       },
       false
     );
-    var users = topUsers(
-      filtered,
-      function () {
-        return 1;
-      },
-      false,
-      6
-    );
+    var weekday = aggregateByWeekday(filtered);
 
     destroyCharts();
     chartOne = createChart(
@@ -238,8 +303,8 @@
     chartTwo = createChart(
       chartTwoCanvas,
       "bar",
-      users.labels,
-      users.values,
+      weekday.labels,
+      weekday.values,
       "Cantidad",
       "#0ea5e9"
     );
@@ -262,10 +327,10 @@
 
   function renderLength(filtered) {
     modalTitleEl.textContent = "Analítica: Longitud promedio";
-    chartOneTitleEl.textContent = "Distribución de longitudes";
+    chartOneTitleEl.textContent = "Distribución de longitudes por usuario";
     chartTwoTitleEl.textContent = "Promedio diario de caracteres";
 
-    var dist = lengthDistribution(filtered);
+    var dist = averageLengthByUser(filtered);
     var dailyAvg = aggregateByDay(
       filtered,
       function (item) {
@@ -280,7 +345,7 @@
       "bar",
       dist.labels,
       dist.values,
-      "Frecuencia",
+      "Longitud promedio por usuario",
       "#8b5cf6"
     );
     chartTwo = createChart(
@@ -307,7 +372,7 @@
   function renderTime(filtered) {
     modalTitleEl.textContent = "Analítica: Tiempo promedio de creación";
     chartOneTitleEl.textContent = "Tiempo promedio diario (segundos)";
-    chartTwoTitleEl.textContent = "Tiempo promedio por usuario";
+    chartTwoTitleEl.textContent = "Tiempo promedio por usuario (dona)";
 
     var dailyAvgSec = aggregateByDay(
       filtered,
@@ -322,7 +387,7 @@
         return item.generationMs / 1000;
       },
       true,
-      6
+      0
     );
 
     destroyCharts();
@@ -336,7 +401,7 @@
     );
     chartTwo = createChart(
       chartTwoCanvas,
-      "bar",
+      "doughnut",
       byUserAvgSec.labels,
       byUserAvgSec.values,
       "Segundos",
